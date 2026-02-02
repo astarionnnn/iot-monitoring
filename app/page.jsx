@@ -28,7 +28,7 @@ import {
   Bar,
 } from "recharts";
 
-const LINE_COLORS = { temperature: "#ef4444", humidity: "#3b82f6" };
+const LINE_COLORS = { temperature: "#ef4444", humidity: "#3b82f6", soil_moisture: "#22c55e" };
 const PIE_COLORS = ["#3b82f6", "#22c55e"];
 const BAR_COLORS = ["#ef4444", "#3b82f6", "#22c55e"];
 
@@ -76,9 +76,11 @@ export default function Dashboard() {
     const reversed = [...history].reverse();
     return reversed.map((d) => ({
       time: formatTime(d.created_at),
+      date: formatDate(d.created_at),
       full: d.created_at,
       suhu: d.temperature != null ? Number(d.temperature) : null,
       kelembapan: d.humidity != null ? Number(d.humidity) : null,
+      kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
   }, [history]);
 
@@ -225,28 +227,28 @@ export default function Dashboard() {
                       value={sensor.temperature != null ? `${sensor.temperature}°C` : "—"}
                       label="Suhu"
                       icon="🌡️"
-                      trend="+2.5°"
+                      // trend="+2.5°"
                       color="red"
                     />
                     <StatCard
                       value={sensor.humidity != null ? `${sensor.humidity}%` : "—"}
                       label="Kelembapan Udara"
                       icon="💧"
-                      trend="+5%"
+                      // trend="+5%"
                       color="blue"
                     />
                     <StatCard
                       value={sensor.soil_moisture != null ? `${sensor.soil_moisture}%` : "—"}
                       label="Kelembapan Tanah"
                       icon="🌱"
-                      trend="-3%"
+                      // trend="-3%"
                       color="green"
                     />
                     <StatCard
                       value={sensor.rain_status ? "Hujan" : "Cerah"}
                       label="Status Cuaca"
                       icon="🌧️"
-                      trend={sensor.rain_status ? "Hujan" : "Cerah"}
+                      // trend={sensor.rain_status ? "Hujan" : "Cerah"}
                       color="purple"
                     />
                   </div>
@@ -256,7 +258,7 @@ export default function Dashboard() {
                 <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   {/* Line Chart - Full Width on Large */}
                   <div className="lg:col-span-3">
-                    <ChartCard title="Riwayat Suhu & Kelembapan">
+                    <ChartCard title="Riwayat Suhu, Kelembapan Udara & Tanah">
                       <div className="h-[320px] w-full">
                         {lineData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
@@ -266,6 +268,12 @@ export default function Dashboard() {
                               <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "#71717a" }} stroke="#3f3f46" domain={["auto", "auto"]} />
                               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "#71717a" }} stroke="#3f3f46" domain={[0, 100]} />
                               <Tooltip
+                                labelFormatter={(_, payload) => {
+                                  if (payload?.[0]?.payload) {
+                                    return `${payload[0].payload.date} ${payload[0].payload.time}`;
+                                  }
+                                  return "";
+                                }}
                                 contentStyle={{
                                   fontSize: "12px",
                                   borderRadius: "12px",
@@ -274,9 +282,18 @@ export default function Dashboard() {
                                   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.3)",
                                 }}
                               />
-                              <Legend wrapperStyle={{ fontSize: "12px" }} />
-                              <Line yAxisId="left" type="monotone" dataKey="suhu" name="Suhu (°C)" stroke="#ef4444" strokeWidth={3} dot={false} connectNulls />
-                              <Line yAxisId="right" type="monotone" dataKey="kelembapan" name="Kelembapan (%)" stroke="#3b82f6" strokeWidth={3} dot={false} connectNulls />
+                              <Legend
+                                wrapperStyle={{ fontSize: "12px" }}
+                                formatter={(value) => {
+                                  if (value === "suhu") return "Suhu (°C)";
+                                  if (value === "kelembapan") return "Kelembapan Udara (%)";
+                                  if (value === "kelembapan_tanah") return "Kelembapan Tanah (%)";
+                                  return value;
+                                }}
+                              />
+                              <Line yAxisId="left" type="monotone" dataKey="suhu" name="suhu" stroke={LINE_COLORS.temperature} strokeWidth={3} dot={false} connectNulls />
+                              <Line yAxisId="right" type="monotone" dataKey="kelembapan" name="kelembapan" stroke={LINE_COLORS.humidity} strokeWidth={3} dot={false} connectNulls />
+                              <Line yAxisId="right" type="monotone" dataKey="kelembapan_tanah" name="kelembapan_tanah" stroke={LINE_COLORS.soil_moisture} strokeWidth={3} dot={false} connectNulls />
                             </LineChart>
                           </ResponsiveContainer>
                         ) : (
