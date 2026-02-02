@@ -320,10 +320,10 @@ export default function Dashboard() {
                   {/* Line Chart - Full Width on Large */}
                   <div className="lg:col-span-3">
                     <ChartCard title="Riwayat Sensor">
-                      <div className="h-[280px] w-full sm:h-[320px]">
+                      <div className="h-[200px] w-full sm:h-[320px]">
                         {lineData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={lineData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                            <LineChart data={lineData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" opacity={0.5} />
                               <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#71717a" }} stroke="#3f3f46" />
                               <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "#71717a" }} stroke="#3f3f46" domain={["auto", "auto"]} />
@@ -367,10 +367,10 @@ export default function Dashboard() {
                   {/* Pie Chart */}
                   <div className="lg:col-span-1">
                     <ChartCard title="Status Hujan">
-                      <div className="h-[280px] w-full">
+                      <div className="h-[200px] w-full sm:h-[280px]">
                         {pieData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
+                            <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                               <Pie
                                 data={pieData}
                                 cx="50%"
@@ -405,13 +405,13 @@ export default function Dashboard() {
                   {/* Bar Chart */}
                   <div className="lg:col-span-2">
                     <ChartCard title="Nilai Sensor Saat Ini">
-                      <div className="h-[280px] w-full">
+                      <div className="h-[200px] w-full sm:h-[280px]">
                         {barData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barData} layout="vertical" margin={{ top: 8, right: 24, left: 100, bottom: 8 }}>
+                            <BarChart data={barData} layout="vertical" margin={{ top: 5, right: 20, left: 70, bottom: 5 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" opacity={0.5} />
-                              <XAxis type="number" tick={{ fontSize: 11, fill: "#71717a" }} stroke="#3f3f46" />
-                              <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 11, fill: "#71717a" }} stroke="#3f3f46" />
+                              <XAxis type="number" hide />
+                              <YAxis type="category" dataKey="name" width={65} tick={{ fontSize: 10, fill: "#71717a" }} stroke="#3f3f46" />
                               <Tooltip
                                 contentStyle={{
                                   fontSize: "12px",
@@ -488,7 +488,7 @@ function StatCard({ value, unit, label, icon, trend, color }) {
   const colors = colorClasses[color];
 
   return (
-    <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 active:scale-[0.98] animate-on-load opacity-0 ${colors.gradient} ${colors.border} ${colors.shadow}`}>
+    <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-4 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 active:scale-[0.98] animate-on-load opacity-0 ${colors.gradient} ${colors.border} ${colors.shadow}`}>
       {/* Animated gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
@@ -504,7 +504,7 @@ function StatCard({ value, unit, label, icon, trend, color }) {
             <p className="mt-2 text-xs text-zinc-500 transition-colors duration-300 group-hover:text-zinc-400">{trend}</p>
           )}
         </div>
-        <div className="text-4xl opacity-50 transition-all duration-300 group-hover:scale-125 group-hover:opacity-70 group-hover:rotate-6">
+        <div className="text-3xl opacity-50 transition-all duration-300 group-hover:scale-125 group-hover:opacity-70 group-hover:rotate-6 sm:text-4xl">
           {icon}
         </div>
       </div>
