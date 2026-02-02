@@ -85,9 +85,9 @@ export default function Dashboard() {
         animate(".animate-on-load", {
           translateY: [30, 0],
           opacity: [0, 1],
-          delay: stagger(100, { start: 1200 }),
+          delay: stagger(100, { start: 200 }),
           easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-          duration: 1400,
+          duration: 1000,
         });
         hasAnimatedIn.current = true;
       }
