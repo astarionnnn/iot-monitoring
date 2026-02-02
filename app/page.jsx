@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { db } from "@/lib/firebase";
 import DevicesPage from "@/components/DevicesPage";
-import SettingsPage from "@/components/SettingsPage";
 import DecisionSupportCard from "@/components/DecisionSupportCard";
 import AnimatedValue from "@/components/AnimatedValue";
 import { formatDate, formatTime } from "@/lib/dateFormat";
@@ -209,15 +208,6 @@ export default function Dashboard() {
             >
               Perangkat
             </button>
-            <button
-              onClick={() => setCurrentPage("settings")}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${currentPage === "settings"
-                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
-                }`}
-            >
-              Pengaturan
-            </button>
           </nav>
 
           {/* Breadcrumb */}
@@ -232,7 +222,7 @@ export default function Dashboard() {
               <>
                 <span>→</span>
                 <span className="font-medium text-blue-400">
-                  {currentPage === "devices" ? "Perangkat" : "Pengaturan"}
+                  {currentPage === "devices" ? "Perangkat" : ""}
                 </span>
               </>
             )}
@@ -243,9 +233,6 @@ export default function Dashboard() {
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
         {/* Devices Page */}
         {currentPage === "devices" && <DevicesPage />}
-
-        {/* Settings Page */}
-        {currentPage === "settings" && <SettingsPage />}
 
         {/* Dashboard Page */}
         {currentPage === "dashboard" && (
