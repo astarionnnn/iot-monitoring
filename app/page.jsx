@@ -23,16 +23,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
 } from "recharts";
 
 const LINE_COLORS = { temperature: "#ef4444", humidity: "#3b82f6", soil_moisture: "#22c55e" };
-const PIE_COLORS = ["#3b82f6", "#22c55e"];
-const BAR_COLORS = ["#ef4444", "#3b82f6", "#22c55e"];
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -123,36 +116,6 @@ export default function Dashboard() {
       kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
   }, [history]);
-
-  const pieData = useMemo(() => {
-    const rain = history.filter((d) => d.rain_status === true).length;
-    const noRain = history.filter((d) => d.rain_status === false).length;
-    return [
-      { name: "Hujan", value: rain, fill: PIE_COLORS[0] },
-      { name: "Tidak Hujan", value: noRain, fill: PIE_COLORS[1] },
-    ].filter((d) => d.value > 0);
-  }, [history]);
-
-  const barData = useMemo(() => {
-    if (!sensor) return [];
-    return [
-      {
-        name: "Suhu",
-        value: sensor.temperature != null ? Number(sensor.temperature) : 0,
-        unit: "°C",
-      },
-      {
-        name: "Kelembapan Udara",
-        value: sensor.humidity != null ? Number(sensor.humidity) : 0,
-        unit: "%",
-      },
-      {
-        name: "Kelembapan Tanah",
-        value: sensor.soil_moisture != null ? Number(sensor.soil_moisture) : 0,
-        unit: "%",
-      },
-    ];
-  }, [sensor]);
 
   if (loading && !sensor) {
     return (
@@ -303,9 +266,9 @@ export default function Dashboard() {
                 </section>
 
                 {/* Charts Section */}
-                <section className="animate-on-load opacity-0 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <section className="animate-on-load opacity-0 grid grid-cols-1 gap-6">
                   {/* Line Chart - Full Width on Large */}
-                  <div className="lg:col-span-3">
+                  <div>
                     <ChartCard title="Riwayat Sensor">
                       <div className="h-[200px] w-full sm:h-[320px]">
                         {lineData.length > 0 ? (
@@ -350,82 +313,6 @@ export default function Dashboard() {
                       </div>
                     </ChartCard>
                   </div>
-
-                  {/* Pie Chart */}
-                  <div className="lg:col-span-1">
-                    <ChartCard title="Status Hujan">
-                      <div className="h-[200px] w-full sm:h-[280px]">
-                        {pieData.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                              <Pie
-                                data={pieData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={90}
-                                paddingAngle={2}
-                                dataKey="value"
-                                label={({ name, value }) => `${name}: ${value}`}
-                              >
-                                {pieData.map((entry) => (
-                                  <Cell key={entry.name} fill={entry.fill} />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                contentStyle={{
-                                  fontSize: "12px",
-                                  borderRadius: "12px",
-                                  background: "#18181b",
-                                  border: "1px solid #27272a",
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <EmptyState message="Belum ada data" />
-                        )}
-                      </div>
-                    </ChartCard>
-                  </div>
-
-                  {/* Bar Chart */}
-                  <div className="lg:col-span-2">
-                    <ChartCard title="Nilai Sensor Saat Ini">
-                      <div className="h-[200px] w-full sm:h-[280px]">
-                        {barData.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barData} layout="vertical" margin={{ top: 5, right: 20, left: 70, bottom: 5 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" opacity={0.5} />
-                              <XAxis type="number" hide />
-                              <YAxis type="category" dataKey="name" width={65} tick={{ fontSize: 10, fill: "#71717a" }} stroke="#3f3f46" />
-                              <Tooltip
-                                contentStyle={{
-                                  fontSize: "12px",
-                                  borderRadius: "12px",
-                                  background: "#18181b",
-                                  border: "1px solid #27272a",
-                                }}
-                              />
-                              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                                {barData.map((_, index) => (
-                                  <Cell key={index} fill={BAR_COLORS[index]} />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <EmptyState message="Tidak ada data" />
-                        )}
-                      </div>
-                    </ChartCard>
-                  </div>
-                </section>
-              </div>
-            )}
-          </>
-        )}
-      </main>
 
       {/* Footer */}
       <footer className="mt-12 border-t border-zinc-800/50 bg-zinc-950/50 py-8 md:mt-20">
