@@ -267,7 +267,7 @@ export default function Dashboard() {
 
                 {/* Charts Section */}
                 <section className="animate-on-load opacity-0 grid grid-cols-1 gap-6">
-                  {/* Line Chart - Full Width on Large */}
+                  {/* Line Chart - Full Width */}
                   <div>
                     <ChartCard title="Riwayat Sensor">
                       <div className="h-[200px] w-full sm:h-[320px]">
@@ -313,6 +313,12 @@ export default function Dashboard() {
                       </div>
                     </ChartCard>
                   </div>
+                </section>
+              </div>
+            )}
+          </>
+        )}
+      </main>
 
       {/* Footer */}
       <footer className="mt-12 border-t border-zinc-800/50 bg-zinc-950/50 py-8 md:mt-20">
