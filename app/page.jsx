@@ -11,6 +11,7 @@ import StatCard from "@/components/StatCard";
 import ChartCard from "@/components/ChartCard";
 import TimeFilter from "@/components/TimeFilter";
 import EmptyState from "@/components/EmptyState";
+import AutomationCard from "@/components/AutomationCard";
 import { ToastProvider, useToast } from "@/components/ToastNotification";
 import { SkeletonCard, SkeletonChart, SkeletonDecision } from "@/components/SkeletonLoader";
 import { formatDate, formatTime } from "@/lib/dateFormat";
@@ -111,6 +112,37 @@ function DashboardContent() {
     }
   }, [toast]);
 
+  const handleRuleTriggered = useCallback((device, action, value, rule) => {
+    const deviceName = {
+      fan: "Kipas",
+      pump: "Pompa",
+      light: "Lampu"
+    }[device] || device;
+
+    const conditionName = {
+      temperature: "Suhu",
+      soil_moisture: "Kelembapan Tanah",
+      humidity: "Kelembapan Udara"
+    }[rule?.split(':')[0]] || rule; // Extract condition from "condition: value" string if needed, or use mapping
+
+    // The value passed from AutomationCard is already formatted string in some cases, 
+    // but let's look at how it calls it: 
+    // onRuleTriggered(device, status, triggerReason);
+    // triggerReason is like "temperature: 32.5°C" or "Timer 30s selesai"
+
+    // Let's parse the triggerReason for better toast if possible, or just use it.
+    // The requirement says: "🤖 AUTO: [Device] [Action] ([Condition]: [Value][Unit])"
+    // The AutomationCard passes `triggerReason` as the 3rd argument.
+    // toggleDevice(device, status, `${rule.condition}: ${sensorValue.toFixed(1)}${getUnit(rule.condition)}`)
+
+    const actionText = action ? "ON" : "OFF";
+
+    // value here corresponds to `triggerReason` from AutomationCard
+    // So we can just use it directly or format it.
+
+    toast.info(`🤖 AUTO: ${deviceName} ${actionText} (${value})`);
+  }, [toast]);
+
   // Fetch initial data
   const fetchData = async () => {
     try {
@@ -122,7 +154,7 @@ function DashboardContent() {
 
       const snapshot = await getDocs(q);
       const docs = [];
-      
+
       snapshot.forEach((doc) => {
         const d = doc.data();
         const created = d.created_at?.toDate?.() ?? new Date();
@@ -165,7 +197,7 @@ function DashboardContent() {
 
       const snapshot = await getDocs(q);
       const docs = [];
-      
+
       snapshot.forEach((doc) => {
         const d = doc.data();
         const created = d.created_at?.toDate?.() ?? new Date();
@@ -471,6 +503,13 @@ function DashboardContent() {
                   <DecisionSupportCard sensorData={sensor} />
                 </section>
 
+                <section className="animate-on-load opacity-0">
+                  <AutomationCard
+                    sensorData={sensor}
+                    onRuleTriggered={handleRuleTriggered}
+                  />
+                </section>
+
                 <section className="animate-on-load opacity-0 grid grid-cols-1 gap-6">
                   <div>
                     <ChartCard
@@ -527,7 +566,7 @@ function DashboardContent() {
                         )}
                       </div>
                     </ChartCard>
-                    
+
                     {/* Load More Button */}
                     {hasMore && (
                       <div className="mt-4 flex justify-center">
@@ -547,7 +586,7 @@ function DashboardContent() {
                         </button>
                       </div>
                     )}
-                    
+
                     {!hasMore && history.length > 1000 && (
                       <div className="mt-4 text-center text-sm text-zinc-500">
                         ✓ All {history.length.toLocaleString()} records loaded
