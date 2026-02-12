@@ -11,7 +11,6 @@ import StatCard from "@/components/StatCard";
 import ChartCard from "@/components/ChartCard";
 import TimeFilter from "@/components/TimeFilter";
 import EmptyState from "@/components/EmptyState";
-import AutomationCard from "@/components/AutomationCard";
 import { ToastProvider, useToast } from "@/components/ToastNotification";
 import { SkeletonCard, SkeletonChart, SkeletonDecision } from "@/components/SkeletonLoader";
 import { formatDate, formatTime } from "@/lib/dateFormat";
@@ -49,8 +48,7 @@ function DashboardContent() {
   const toast = useToast();
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sensor, setSensor] = useState(null);
-  const [allHistory, setAllHistory] = useState([]); // Semua data yang di-load
-  const [filteredHistory, setFilteredHistory] = useState([]); // Data setelah filter
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [timeFilter, setTimeFilter] = useState("all");
@@ -61,6 +59,10 @@ function DashboardContent() {
   const [hasMore, setHasMore] = useState(true);
   const hasAnimatedIn = useRef(false);
   const lastAlertRef = useRef({ temperature: null, humidity: null, soil_moisture: null });
+
+  const handleRuleTriggered = useCallback((message) => {
+    toast.info(message);
+  }, [toast]);
 
   const checkAndAlert = useCallback((sensorData) => {
     if (!sensorData) return;
@@ -113,44 +115,13 @@ function DashboardContent() {
     }
   }, [toast]);
 
-  const handleRuleTriggered = useCallback((device, action, value, rule) => {
-    const deviceName = {
-      fan: "Kipas",
-      pump: "Pompa",
-      light: "Lampu"
-    }[device] || device;
-
-    const conditionName = {
-      temperature: "Suhu",
-      soil_moisture: "Kelembapan Tanah",
-      humidity: "Kelembapan Udara"
-    }[rule?.split(':')[0]] || rule; // Extract condition from "condition: value" string if needed, or use mapping
-
-    // The value passed from AutomationCard is already formatted string in some cases, 
-    // but let's look at how it calls it: 
-    // onRuleTriggered(device, status, triggerReason);
-    // triggerReason is like "temperature: 32.5°C" or "Timer 30s selesai"
-
-    // Let's parse the triggerReason for better toast if possible, or just use it.
-    // The requirement says: "🤖 AUTO: [Device] [Action] ([Condition]: [Value][Unit])"
-    // The AutomationCard passes `triggerReason` as the 3rd argument.
-    // toggleDevice(device, status, `${rule.condition}: ${sensorValue.toFixed(1)}${getUnit(rule.condition)}`)
-
-    const actionText = action ? "ON" : "OFF";
-
-    // value here corresponds to `triggerReason` from AutomationCard
-    // So we can just use it directly or format it.
-
-    toast.info(`🤖 AUTO: ${deviceName} ${actionText} (${value})`);
-  }, [toast]);
-
   // Fetch initial data
   const fetchData = async () => {
     try {
       const q = query(
         collection(db, "sensor_data"),
         orderBy("created_at", "desc"),
-        limit(1000)
+        limit(1000) // Initial load: 1000 data
       );
 
       const snapshot = await getDocs(q);
@@ -164,7 +135,7 @@ function DashboardContent() {
 
       if (docs.length > 0) {
         setSensor(docs[0]);
-        setAllHistory(docs);
+        setHistory(docs);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
         setHasMore(snapshot.docs.length === 1000);
         setLastUpdated(new Date());
@@ -172,7 +143,7 @@ function DashboardContent() {
         checkAndAlert(docs[0]);
       } else {
         setSensor(null);
-        setAllHistory([]);
+        setHistory([]);
         setHasMore(false);
       }
     } catch (err) {
@@ -183,7 +154,7 @@ function DashboardContent() {
     }
   };
 
-  // Load more data
+  // Load more data (pagination)
   const loadMoreData = async () => {
     if (!hasMore || loadingMore || !lastDoc) return;
 
@@ -206,7 +177,7 @@ function DashboardContent() {
       });
 
       if (docs.length > 0) {
-        setAllHistory(prev => [...prev, ...docs]);
+        setHistory(prev => [...prev, ...docs]);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
         setHasMore(snapshot.docs.length === 1000);
         toast.info(`✓ Loaded ${docs.length} more records`);
@@ -221,36 +192,6 @@ function DashboardContent() {
       setLoadingMore(false);
     }
   };
-
-  // FILTER CLIENT-SIDE: Apply time filter to allHistory
-  useEffect(() => {
-    if (allHistory.length === 0) {
-      setFilteredHistory([]);
-      return;
-    }
-
-    if (timeFilter === "all") {
-      setFilteredHistory(allHistory);
-      return;
-    }
-
-    const now = new Date();
-    let hoursAgo;
-
-    switch (timeFilter) {
-      case "1h": hoursAgo = 1; break;
-      case "6h": hoursAgo = 6; break;
-      case "12h": hoursAgo = 12; break;
-      case "1d": hoursAgo = 24; break;
-      case "2d": hoursAgo = 48; break;
-      case "7d": hoursAgo = 168; break;
-      default: hoursAgo = 24;
-    }
-
-    const cutoffTime = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
-    const filtered = allHistory.filter(d => d.created_at >= cutoffTime);
-    setFilteredHistory(filtered);
-  }, [allHistory, timeFilter]);
 
   useEffect(() => {
     if (currentPage !== "dashboard") {
@@ -288,7 +229,7 @@ function DashboardContent() {
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
-      // Update latest sensor only
+      // Only update sensor (latest), don't reload all history
       const q = query(
         collection(db, "sensor_data"),
         orderBy("created_at", "desc"),
@@ -325,9 +266,8 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
-  // Use filteredHistory for charts
   const lineData = useMemo(() => {
-    const reversed = [...filteredHistory].reverse();
+    const reversed = [...history].reverse();
     return reversed.map((d) => ({
       time: formatTime(d.created_at),
       date: formatDate(d.created_at),
@@ -336,16 +276,16 @@ function DashboardContent() {
       kelembapan: d.humidity != null ? Number(d.humidity) : null,
       kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
-  }, [filteredHistory]);
+  }, [history]);
 
   const sparklineData = useMemo(() => {
-    const reversed = [...allHistory].reverse().slice(-15);
+    const reversed = [...history].reverse().slice(-15);
     return {
       temperature: reversed.map(d => d.temperature).filter(v => v != null),
       humidity: reversed.map(d => d.humidity).filter(v => v != null),
       soil_moisture: reversed.map(d => d.soil_moisture).filter(v => v != null),
     };
-  }, [allHistory]);
+  }, [history]);
 
   const getFilterLabel = () => {
     switch (timeFilter) {
@@ -462,7 +402,12 @@ function DashboardContent() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        {currentPage === "devices" && <DevicesPage />}
+        {currentPage === "devices" && (
+          <DevicesPage
+            sensorData={sensor}
+            onRuleTriggered={handleRuleTriggered}
+          />
+        )}
 
         {currentPage === "dashboard" && (
           <>
@@ -535,13 +480,6 @@ function DashboardContent() {
                   <DecisionSupportCard sensorData={sensor} />
                 </section>
 
-                <section className="animate-on-load opacity-0">
-                  <AutomationCard
-                    sensorData={sensor}
-                    onRuleTriggered={handleRuleTriggered}
-                  />
-                </section>
-
                 <section className="animate-on-load opacity-0 grid grid-cols-1 gap-6">
                   <div>
                     <ChartCard
@@ -549,7 +487,7 @@ function DashboardContent() {
                       filter={
                         <div className="flex flex-wrap items-center gap-2">
                           <TimeFilter currentFilter={timeFilter} onFilterChange={setTimeFilter} />
-                          <ExportMenu data={filteredHistory} toast={toast} />
+                          <ExportMenu data={history} toast={toast} />
                         </div>
                       }
                     >
@@ -598,8 +536,9 @@ function DashboardContent() {
                         )}
                       </div>
                     </ChartCard>
-                    {/* Load More Button - hanya tampil untuk "all" filter */}
-                    {timeFilter === "all" && hasMore && (
+
+                    {/* Load More Button */}
+                    {hasMore && (
                       <div className="mt-4 flex justify-center">
                         <button
                           onClick={loadMoreData}
@@ -612,20 +551,15 @@ function DashboardContent() {
                               Loading...
                             </span>
                           ) : (
-                            `Load More Data (${allHistory.length.toLocaleString()} loaded)`
+                            `Load More Data (${history.length.toLocaleString()} loaded)`
                           )}
                         </button>
                       </div>
                     )}
-                    {timeFilter === "all" && !hasMore && allHistory.length > 1000 && (
-                      <div className="mt-4 text-center text-sm text-zinc-500">
-                        ✓ All {allHistory.length.toLocaleString()} records loaded
-                      </div>
-                    )}
 
-                    {timeFilter !== "all" && (
+                    {!hasMore && history.length > 1000 && (
                       <div className="mt-4 text-center text-sm text-zinc-500">
-                        Showing {filteredHistory.length.toLocaleString()} of {allHistory.length.toLocaleString()} records
+                        ✓ All {history.length.toLocaleString()} records loaded
                       </div>
                     )}
                   </div>
@@ -655,7 +589,7 @@ function DashboardContent() {
                       }
                     >
                       <CalendarHeatmap
-                        data={allHistory}
+                        data={history}
                         dataKey={heatmapDataKey}
                       />
                     </ChartCard>
