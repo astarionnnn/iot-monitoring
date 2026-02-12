@@ -49,7 +49,8 @@ function DashboardContent() {
   const toast = useToast();
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sensor, setSensor] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [allHistory, setAllHistory] = useState([]); // Semua data yang di-load
+  const [filteredHistory, setFilteredHistory] = useState([]); // Data setelah filter
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [timeFilter, setTimeFilter] = useState("all");
@@ -149,7 +150,7 @@ function DashboardContent() {
       const q = query(
         collection(db, "sensor_data"),
         orderBy("created_at", "desc"),
-        limit(1000) // Initial load: 1000 data
+        limit(1000)
       );
 
       const snapshot = await getDocs(q);
@@ -163,7 +164,7 @@ function DashboardContent() {
 
       if (docs.length > 0) {
         setSensor(docs[0]);
-        setHistory(docs);
+        setAllHistory(docs);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
         setHasMore(snapshot.docs.length === 1000);
         setLastUpdated(new Date());
@@ -171,7 +172,7 @@ function DashboardContent() {
         checkAndAlert(docs[0]);
       } else {
         setSensor(null);
-        setHistory([]);
+        setAllHistory([]);
         setHasMore(false);
       }
     } catch (err) {
@@ -182,7 +183,7 @@ function DashboardContent() {
     }
   };
 
-  // Load more data (pagination)
+  // Load more data
   const loadMoreData = async () => {
     if (!hasMore || loadingMore || !lastDoc) return;
 
@@ -205,7 +206,7 @@ function DashboardContent() {
       });
 
       if (docs.length > 0) {
-        setHistory(prev => [...prev, ...docs]);
+        setAllHistory(prev => [...prev, ...docs]);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
         setHasMore(snapshot.docs.length === 1000);
         toast.info(`✓ Loaded ${docs.length} more records`);
@@ -220,6 +221,36 @@ function DashboardContent() {
       setLoadingMore(false);
     }
   };
+
+  // FILTER CLIENT-SIDE: Apply time filter to allHistory
+  useEffect(() => {
+    if (allHistory.length === 0) {
+      setFilteredHistory([]);
+      return;
+    }
+
+    if (timeFilter === "all") {
+      setFilteredHistory(allHistory);
+      return;
+    }
+
+    const now = new Date();
+    let hoursAgo;
+
+    switch (timeFilter) {
+      case "1h": hoursAgo = 1; break;
+      case "6h": hoursAgo = 6; break;
+      case "12h": hoursAgo = 12; break;
+      case "1d": hoursAgo = 24; break;
+      case "2d": hoursAgo = 48; break;
+      case "7d": hoursAgo = 168; break;
+      default: hoursAgo = 24;
+    }
+
+    const cutoffTime = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
+    const filtered = allHistory.filter(d => d.created_at >= cutoffTime);
+    setFilteredHistory(filtered);
+  }, [allHistory, timeFilter]);
 
   useEffect(() => {
     if (currentPage !== "dashboard") {
@@ -257,7 +288,7 @@ function DashboardContent() {
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
-      // Only update sensor (latest), don't reload all history
+      // Update latest sensor only
       const q = query(
         collection(db, "sensor_data"),
         orderBy("created_at", "desc"),
@@ -294,8 +325,9 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
+  // Use filteredHistory for charts
   const lineData = useMemo(() => {
-    const reversed = [...history].reverse();
+    const reversed = [...filteredHistory].reverse();
     return reversed.map((d) => ({
       time: formatTime(d.created_at),
       date: formatDate(d.created_at),
@@ -304,16 +336,16 @@ function DashboardContent() {
       kelembapan: d.humidity != null ? Number(d.humidity) : null,
       kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
-  }, [history]);
+  }, [filteredHistory]);
 
   const sparklineData = useMemo(() => {
-    const reversed = [...history].reverse().slice(-15);
+    const reversed = [...allHistory].reverse().slice(-15);
     return {
       temperature: reversed.map(d => d.temperature).filter(v => v != null),
       humidity: reversed.map(d => d.humidity).filter(v => v != null),
       soil_moisture: reversed.map(d => d.soil_moisture).filter(v => v != null),
     };
-  }, [history]);
+  }, [allHistory]);
 
   const getFilterLabel = () => {
     switch (timeFilter) {
@@ -517,7 +549,7 @@ function DashboardContent() {
                       filter={
                         <div className="flex flex-wrap items-center gap-2">
                           <TimeFilter currentFilter={timeFilter} onFilterChange={setTimeFilter} />
-                          <ExportMenu data={history} toast={toast} />
+                          <ExportMenu data={filteredHistory} toast={toast} />
                         </div>
                       }
                     >
@@ -566,9 +598,8 @@ function DashboardContent() {
                         )}
                       </div>
                     </ChartCard>
-
-                    {/* Load More Button */}
-                    {hasMore && (
+                    {/* Load More Button - hanya tampil untuk "all" filter */}
+                    {timeFilter === "all" && hasMore && (
                       <div className="mt-4 flex justify-center">
                         <button
                           onClick={loadMoreData}
@@ -581,15 +612,20 @@ function DashboardContent() {
                               Loading...
                             </span>
                           ) : (
-                            `Load More Data (${history.length.toLocaleString()} loaded)`
+                            `Load More Data (${allHistory.length.toLocaleString()} loaded)`
                           )}
                         </button>
                       </div>
                     )}
-
-                    {!hasMore && history.length > 1000 && (
+                    {timeFilter === "all" && !hasMore && allHistory.length > 1000 && (
                       <div className="mt-4 text-center text-sm text-zinc-500">
-                        ✓ All {history.length.toLocaleString()} records loaded
+                        ✓ All {allHistory.length.toLocaleString()} records loaded
+                      </div>
+                    )}
+
+                    {timeFilter !== "all" && (
+                      <div className="mt-4 text-center text-sm text-zinc-500">
+                        Showing {filteredHistory.length.toLocaleString()} of {allHistory.length.toLocaleString()} records
                       </div>
                     )}
                   </div>
@@ -619,7 +655,7 @@ function DashboardContent() {
                       }
                     >
                       <CalendarHeatmap
-                        data={history}
+                        data={allHistory}
                         dataKey={heatmapDataKey}
                       />
                     </ChartCard>
