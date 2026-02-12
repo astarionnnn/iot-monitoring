@@ -22,7 +22,7 @@ import {
   orderBy,
   limit,
   getDocs,
-  where,
+  startAfter,
   Timestamp,
 } from "firebase/firestore";
 import {
@@ -38,7 +38,6 @@ import {
 
 const LINE_COLORS = { temperature: "#ef4444", humidity: "#3b82f6", soil_moisture: "#22c55e" };
 
-// Thresholds for alerts
 const THRESHOLDS = {
   temperature: { critical: 35, warning: 30, low: 15 },
   humidity: { critical: 95, warning: 90, low: 40 },
@@ -51,20 +50,21 @@ function DashboardContent() {
   const [sensor, setSensor] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [timeFilter, setTimeFilter] = useState("all");
   const [heatmapDataKey, setHeatmapDataKey] = useState("temperature");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("connecting");
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
   const hasAnimatedIn = useRef(false);
   const lastAlertRef = useRef({ temperature: null, humidity: null, soil_moisture: null });
 
-  // Check sensor values and trigger toasts
   const checkAndAlert = useCallback((sensorData) => {
     if (!sensorData) return;
 
     const { temperature, humidity, soil_moisture } = sensorData;
 
-    // Temperature alerts
     if (temperature != null) {
       if (temperature >= THRESHOLDS.temperature.critical && lastAlertRef.current.temperature !== "critical") {
         toast.critical(`🔥 Suhu Kritis: ${temperature.toFixed(1)}°C! Tanaman dalam bahaya.`);
@@ -80,7 +80,6 @@ function DashboardContent() {
       }
     }
 
-    // Humidity alerts
     if (humidity != null) {
       if (humidity >= THRESHOLDS.humidity.critical && lastAlertRef.current.humidity !== "critical") {
         toast.critical(`💦 Kelembapan Kritis: ${humidity.toFixed(1)}%! Risiko jamur tinggi.`);
@@ -96,7 +95,6 @@ function DashboardContent() {
       }
     }
 
-    // Soil moisture alerts
     if (soil_moisture != null) {
       if (soil_moisture <= THRESHOLDS.soil_moisture.critical_low && lastAlertRef.current.soil_moisture !== "critical_low") {
         toast.critical(`🚨 Tanah Sangat Kering: ${soil_moisture.toFixed(1)}%! Siram segera.`);
@@ -113,72 +111,18 @@ function DashboardContent() {
     }
   }, [toast]);
 
-  // UPDATED: fetchData dengan Firestore where clause
+  // Fetch initial data
   const fetchData = async () => {
     try {
-      // Hitung waktu mulai berdasarkan timeFilter
-      let startDate = null;
-      let queryLimit = 500; // Default limit
-      
-      if (timeFilter !== "all") {
-        const now = new Date();
-        let hoursAgo;
-        
-        switch (timeFilter) {
-          case "1h": 
-            hoursAgo = 1; 
-            queryLimit = 200;
-            break;
-          case "6h": 
-            hoursAgo = 6; 
-            queryLimit = 500;
-            break;
-          case "12h": 
-            hoursAgo = 12; 
-            queryLimit = 800;
-            break;
-          case "1d": 
-            hoursAgo = 24; 
-            queryLimit = 1500;
-            break;
-          case "2d": 
-            hoursAgo = 48; 
-            queryLimit = 2000;
-            break;
-          case "7d": 
-            hoursAgo = 168; 
-            queryLimit = 5000;
-            break;
-          default: 
-            hoursAgo = 24;
-            queryLimit = 1500;
-        }
-        
-        startDate = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
-      } else {
-        // Untuk "all", ambil data lebih banyak
-        queryLimit = 3000;
-      }
-      
-      // Build query dengan where clause jika ada filter
-      let q;
-      if (startDate) {
-        q = query(
-          collection(db, "sensor_data"),
-          where("created_at", ">=", Timestamp.fromDate(startDate)),
-          orderBy("created_at", "desc"),
-          limit(queryLimit)
-        );
-      } else {
-        q = query(
-          collection(db, "sensor_data"),
-          orderBy("created_at", "desc"),
-          limit(queryLimit)
-        );
-      }
+      const q = query(
+        collection(db, "sensor_data"),
+        orderBy("created_at", "desc"),
+        limit(1000) // Initial load: 1000 data
+      );
 
       const snapshot = await getDocs(q);
       const docs = [];
+      
       snapshot.forEach((doc) => {
         const d = doc.data();
         const created = d.created_at?.toDate?.() ?? new Date();
@@ -188,12 +132,15 @@ function DashboardContent() {
       if (docs.length > 0) {
         setSensor(docs[0]);
         setHistory(docs);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === 1000);
         setLastUpdated(new Date());
         setConnectionStatus("connected");
         checkAndAlert(docs[0]);
       } else {
         setSensor(null);
         setHistory([]);
+        setHasMore(false);
       }
     } catch (err) {
       console.error(err);
@@ -203,14 +150,51 @@ function DashboardContent() {
     }
   };
 
-  // Reset entrance animation flag when leaving dashboard to allow re-animation on return
+  // Load more data (pagination)
+  const loadMoreData = async () => {
+    if (!hasMore || loadingMore || !lastDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const q = query(
+        collection(db, "sensor_data"),
+        orderBy("created_at", "desc"),
+        startAfter(lastDoc),
+        limit(1000)
+      );
+
+      const snapshot = await getDocs(q);
+      const docs = [];
+      
+      snapshot.forEach((doc) => {
+        const d = doc.data();
+        const created = d.created_at?.toDate?.() ?? new Date();
+        docs.push({ id: doc.id, ...d, created_at: created });
+      });
+
+      if (docs.length > 0) {
+        setHistory(prev => [...prev, ...docs]);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === 1000);
+        toast.info(`✓ Loaded ${docs.length} more records`);
+      } else {
+        setHasMore(false);
+        toast.info("✓ All data loaded");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load more data");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
     if (currentPage !== "dashboard") {
       hasAnimatedIn.current = false;
     }
   }, [currentPage]);
 
-  // Entrance Animations
   useEffect(() => {
     if (!loading && sensor && currentPage === "dashboard") {
       if (!hasAnimatedIn.current) {
@@ -226,7 +210,6 @@ function DashboardContent() {
     }
   }, [loading, sensor !== null, currentPage]);
 
-  // Persistent Animations (Breathing Icons)
   useEffect(() => {
     if (!loading && sensor && currentPage === "dashboard") {
       animate(".breathing-icon", {
@@ -239,14 +222,29 @@ function DashboardContent() {
     }
   }, [loading, sensor !== null, currentPage]);
 
-  // UPDATED: Fetch data saat timeFilter berubah
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(() => {
+      // Only update sensor (latest), don't reload all history
+      const q = query(
+        collection(db, "sensor_data"),
+        orderBy("created_at", "desc"),
+        limit(1)
+      );
+      getDocs(q).then(snapshot => {
+        if (snapshot.docs.length > 0) {
+          const d = snapshot.docs[0].data();
+          const created = d.created_at?.toDate?.() ?? new Date();
+          const newSensor = { id: snapshot.docs[0].id, ...d, created_at: created };
+          setSensor(newSensor);
+          setLastUpdated(new Date());
+          setConnectionStatus("connected");
+        }
+      });
+    }, 5000);
     return () => clearInterval(interval);
-  }, [timeFilter]); // Tambahkan timeFilter sebagai dependency
+  }, []);
 
-  // Update connection status based on time since last update
   useEffect(() => {
     if (!lastUpdated) return;
 
@@ -264,7 +262,6 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
-  // UPDATED: Langsung gunakan history (tidak perlu filteredHistory)
   const lineData = useMemo(() => {
     const reversed = [...history].reverse();
     return reversed.map((d) => ({
@@ -277,7 +274,6 @@ function DashboardContent() {
     }));
   }, [history]);
 
-  // Generate sparkline data for each sensor (last 15 points)
   const sparklineData = useMemo(() => {
     const reversed = [...history].reverse().slice(-15);
     return {
@@ -287,7 +283,6 @@ function DashboardContent() {
     };
   }, [history]);
 
-  // Get filter label for display
   const getFilterLabel = () => {
     switch (timeFilter) {
       case "1h": return "1 jam terakhir";
@@ -301,7 +296,6 @@ function DashboardContent() {
     }
   };
 
-  // Format last updated time
   const getLastUpdatedText = () => {
     if (!lastUpdated) return "Menunggu data...";
     const now = new Date();
@@ -312,13 +306,9 @@ function DashboardContent() {
     return formatTime(lastUpdated);
   };
 
-  // ... rest of the component (skeleton, return JSX, etc) tetap sama
-  // Hanya ubah filteredHistory jadi history di bagian chart
-
   if (loading && !sensor) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white">
-        {/* Skeleton Header */}
         <header className="sticky top-0 z-50 border-b border-zinc-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
           <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
             <div className="flex items-center justify-between gap-4">
@@ -331,7 +321,6 @@ function DashboardContent() {
           </div>
         </header>
 
-        {/* Skeleton Content */}
         <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
           <div className="mb-6 h-8 w-48 rounded bg-zinc-800 skeleton-shimmer" />
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -346,7 +335,6 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header - tetap sama */}
       <header className="sticky top-0 z-50 border-b border-zinc-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
           <div className="flex items-center justify-between gap-4">
@@ -424,7 +412,6 @@ function DashboardContent() {
               </div>
             ) : (
               <div className="space-y-8">
-                {/* Hero Stats */}
                 <section>
                   <h2 className="mb-6 text-2xl font-bold">Monitoring Sensor</h2>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -540,6 +527,32 @@ function DashboardContent() {
                         )}
                       </div>
                     </ChartCard>
+                    
+                    {/* Load More Button */}
+                    {hasMore && (
+                      <div className="mt-4 flex justify-center">
+                        <button
+                          onClick={loadMoreData}
+                          disabled={loadingMore}
+                          className="rounded-lg bg-blue-500/20 px-6 py-3 text-sm font-medium text-blue-400 border border-blue-500/40 hover:bg-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMore ? (
+                            <span className="flex items-center gap-2">
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                              Loading...
+                            </span>
+                          ) : (
+                            `Load More Data (${history.length.toLocaleString()} loaded)`
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {!hasMore && history.length > 1000 && (
+                      <div className="mt-4 text-center text-sm text-zinc-500">
+                        ✓ All {history.length.toLocaleString()} records loaded
+                      </div>
+                    )}
                   </div>
 
                   <div>
