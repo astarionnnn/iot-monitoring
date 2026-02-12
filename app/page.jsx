@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { db } from "@/lib/firebase";
 import DevicesPage from "@/components/DevicesPage";
 import DecisionSupportCard from "@/components/DecisionSupportCard";
-import AutomationCard from "@/components/AutomationCard";
 import AnimatedValue from "@/components/AnimatedValue";
 import CalendarHeatmap from "@/components/CalendarHeatmap";
 import ExportMenu from "@/components/ExportMenu";
@@ -51,7 +50,6 @@ function DashboardContent() {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sensor, setSensor] = useState(null);
   const [history, setHistory] = useState([]);
-  const [filteredHistory, setFilteredHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState("all");
   const [heatmapDataKey, setHeatmapDataKey] = useState("temperature");
@@ -115,21 +113,69 @@ function DashboardContent() {
     }
   }, [toast]);
 
-  const handleAutomationTrigger = useCallback((device, status, reason) => {
-    const deviceName = device === "fan" ? "Kipas" : device === "pump" ? "Pompa" : "Lampu";
-    const statusText = status ? "ON" : "OFF";
-    const emoji = device === "fan" ? "❄️" : device === "pump" ? "💧" : "💡";
-
-    toast.info(`${emoji} AUTO: ${deviceName} ${statusText} (${reason})`);
-  }, [toast]);
-
+  // UPDATED: fetchData dengan Firestore where clause
   const fetchData = async () => {
     try {
-      const q = query(
-        collection(db, "sensor_data"),
-        orderBy("created_at", "desc"),
-        limit(500)
-      );
+      // Hitung waktu mulai berdasarkan timeFilter
+      let startDate = null;
+      let queryLimit = 500; // Default limit
+      
+      if (timeFilter !== "all") {
+        const now = new Date();
+        let hoursAgo;
+        
+        switch (timeFilter) {
+          case "1h": 
+            hoursAgo = 1; 
+            queryLimit = 200;
+            break;
+          case "6h": 
+            hoursAgo = 6; 
+            queryLimit = 500;
+            break;
+          case "12h": 
+            hoursAgo = 12; 
+            queryLimit = 800;
+            break;
+          case "1d": 
+            hoursAgo = 24; 
+            queryLimit = 1500;
+            break;
+          case "2d": 
+            hoursAgo = 48; 
+            queryLimit = 2000;
+            break;
+          case "7d": 
+            hoursAgo = 168; 
+            queryLimit = 5000;
+            break;
+          default: 
+            hoursAgo = 24;
+            queryLimit = 1500;
+        }
+        
+        startDate = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
+      } else {
+        // Untuk "all", ambil data lebih banyak
+        queryLimit = 3000;
+      }
+      
+      // Build query dengan where clause jika ada filter
+      let q;
+      if (startDate) {
+        q = query(
+          collection(db, "sensor_data"),
+          where("created_at", ">=", Timestamp.fromDate(startDate)),
+          orderBy("created_at", "desc"),
+          limit(queryLimit)
+        );
+      } else {
+        q = query(
+          collection(db, "sensor_data"),
+          orderBy("created_at", "desc"),
+          limit(queryLimit)
+        );
+      }
 
       const snapshot = await getDocs(q);
       const docs = [];
@@ -156,53 +202,6 @@ function DashboardContent() {
       setLoading(false);
     }
   };
-
-  // Filter history based on timeFilter
-  useEffect(() => {
-    if (history.length === 0) {
-      setFilteredHistory([]);
-      return;
-    }
-
-    if (timeFilter === "all") {
-      setFilteredHistory(history);
-      return;
-    }
-
-    const now = new Date();
-    let hoursAgo;
-
-    switch (timeFilter) {
-      case "1h":
-        hoursAgo = 1;
-        break;
-      case "6h":
-        hoursAgo = 6;
-        break;
-      case "12h":
-        hoursAgo = 12;
-        break;
-      case "1d":
-        hoursAgo = 24;
-        break;
-      case "2d":
-        hoursAgo = 48;
-        break;
-      case "7d":
-        hoursAgo = 168;
-        break;
-      default:
-        hoursAgo = 24;
-    }
-
-    const startTime = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
-
-    const filtered = history.filter(item => {
-      return item.created_at >= startTime;
-    });
-
-    setFilteredHistory(filtered);
-  }, [history, timeFilter]);
 
   // Reset entrance animation flag when leaving dashboard to allow re-animation on return
   useEffect(() => {
@@ -240,11 +239,12 @@ function DashboardContent() {
     }
   }, [loading, sensor !== null, currentPage]);
 
+  // UPDATED: Fetch data saat timeFilter berubah
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [timeFilter]); // Tambahkan timeFilter sebagai dependency
 
   // Update connection status based on time since last update
   useEffect(() => {
@@ -264,8 +264,9 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
+  // UPDATED: Langsung gunakan history (tidak perlu filteredHistory)
   const lineData = useMemo(() => {
-    const reversed = [...filteredHistory].reverse();
+    const reversed = [...history].reverse();
     return reversed.map((d) => ({
       time: formatTime(d.created_at),
       date: formatDate(d.created_at),
@@ -274,7 +275,7 @@ function DashboardContent() {
       kelembapan: d.humidity != null ? Number(d.humidity) : null,
       kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
-  }, [filteredHistory]);
+  }, [history]);
 
   // Generate sparkline data for each sensor (last 15 points)
   const sparklineData = useMemo(() => {
@@ -311,6 +312,9 @@ function DashboardContent() {
     return formatTime(lastUpdated);
   };
 
+  // ... rest of the component (skeleton, return JSX, etc) tetap sama
+  // Hanya ubah filteredHistory jadi history di bagian chart
+
   if (loading && !sensor) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -342,11 +346,10 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header/Navigation - Compact */}
+      {/* Header - tetap sama */}
       <header className="sticky top-0 z-50 border-b border-zinc-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
           <div className="flex items-center justify-between gap-4">
-            {/* Logo + Title + Nav */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-sm shadow-md shadow-blue-500/20">
@@ -355,7 +358,6 @@ function DashboardContent() {
                 <h1 className="text-base font-bold hidden sm:block">IoT Monitoring</h1>
               </div>
 
-              {/* Navigation Tabs - Inline */}
               <nav className="flex gap-1">
                 <button
                   onClick={() => setCurrentPage("dashboard")}
@@ -378,7 +380,6 @@ function DashboardContent() {
               </nav>
             </div>
 
-            {/* Connection Status + Theme Toggle - Compact */}
             <div className="flex items-center gap-2">
               <div className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all ${connectionStatus === "connected"
                 ? "bg-green-500/10 text-green-400"
@@ -409,15 +410,8 @@ function DashboardContent() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        {/* Devices Page */}
-        {currentPage === "devices" && (
-          <DevicesPage
-            sensorData={sensor}
-            onRuleTriggered={handleAutomationTrigger}
-          />
-        )}
+        {currentPage === "devices" && <DevicesPage />}
 
-        {/* Dashboard Page */}
         {currentPage === "dashboard" && (
           <>
             {!sensor ? (
@@ -430,7 +424,7 @@ function DashboardContent() {
               </div>
             ) : (
               <div className="space-y-8">
-                {/* Hero Stats - 4 Metric Cards */}
+                {/* Hero Stats */}
                 <section>
                   <h2 className="mb-6 text-2xl font-bold">Monitoring Sensor</h2>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -486,21 +480,18 @@ function DashboardContent() {
                   </div>
                 </section>
 
-                {/* AI Decision Support Module */}
                 <section className="animate-on-load opacity-0">
                   <DecisionSupportCard sensorData={sensor} />
                 </section>
 
-                {/* Charts Section */}
                 <section className="animate-on-load opacity-0 grid grid-cols-1 gap-6">
-                  {/* Line Chart - Full Width */}
                   <div>
                     <ChartCard
                       title="Riwayat Sensor"
                       filter={
                         <div className="flex flex-wrap items-center gap-2">
                           <TimeFilter currentFilter={timeFilter} onFilterChange={setTimeFilter} />
-                          <ExportMenu data={filteredHistory} toast={toast} />
+                          <ExportMenu data={history} toast={toast} />
                         </div>
                       }
                     >
@@ -551,7 +542,6 @@ function DashboardContent() {
                     </ChartCard>
                   </div>
 
-                  {/* Calendar Heatmap */}
                   <div>
                     <ChartCard
                       title="📅 Aktivitas Sensor Harian"
@@ -589,7 +579,6 @@ function DashboardContent() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="mt-12 border-t border-zinc-800/50 bg-zinc-950/50 py-8 md:mt-20">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
