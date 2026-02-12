@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import AutomationCard from "./AutomationCard";
 import { animate, stagger } from "animejs";
 
-export default function DevicesPage() {
+export default function DevicesPage({ sensorData, onRuleTriggered }) {
     const [devices, setDevices] = useState({
         fan: false,
         pump: false,
@@ -60,10 +61,17 @@ export default function DevicesPage() {
         setDevices(updatedDevices);
 
         try {
+            // Update device control
             const docRef = doc(db, "devices", "controls");
             await setDoc(docRef, updatedDevices);
+
+            // Set automation mode to manual
+            const automationRef = doc(db, "automation", "rules");
+            await updateDoc(automationRef, {
+                [`${deviceName}.mode`]: "manual"
+            });
         } catch (error) {
-            console.error("Error updating device:", error);
+            console.error("Error updating device or automation mode:", error);
             // Revert on error
             setDevices(devices);
         }
@@ -131,6 +139,11 @@ export default function DevicesPage() {
                     onToggle={() => toggleDevice("light")}
                     stats="Brightness: 100%"
                 />
+            </div>
+
+            {/* Automation Rules Section */}
+            <div className="device-card opacity-0">
+                <AutomationCard sensorData={sensorData} onRuleTriggered={onRuleTriggered} />
             </div>
 
             {/* Info */}

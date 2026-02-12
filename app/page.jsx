@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { db } from "@/lib/firebase";
 import DevicesPage from "@/components/DevicesPage";
 import DecisionSupportCard from "@/components/DecisionSupportCard";
+import AutomationCard from "@/components/AutomationCard";
 import AnimatedValue from "@/components/AnimatedValue";
 import CalendarHeatmap from "@/components/CalendarHeatmap";
 import ExportMenu from "@/components/ExportMenu";
@@ -112,6 +113,14 @@ function DashboardContent() {
         lastAlertRef.current.soil_moisture = null;
       }
     }
+  }, [toast]);
+
+  const handleAutomationTrigger = useCallback((device, status, reason) => {
+    const deviceName = device === "fan" ? "Kipas" : device === "pump" ? "Pompa" : "Lampu";
+    const statusText = status ? "ON" : "OFF";
+    const emoji = device === "fan" ? "❄️" : device === "pump" ? "💧" : "💡";
+
+    toast.info(`${emoji} AUTO: ${deviceName} ${statusText} (${reason})`);
   }, [toast]);
 
   const fetchData = async () => {
@@ -401,7 +410,12 @@ function DashboardContent() {
 
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
         {/* Devices Page */}
-        {currentPage === "devices" && <DevicesPage />}
+        {currentPage === "devices" && (
+          <DevicesPage
+            sensorData={sensor}
+            onRuleTriggered={handleAutomationTrigger}
+          />
+        )}
 
         {/* Dashboard Page */}
         {currentPage === "dashboard" && (
