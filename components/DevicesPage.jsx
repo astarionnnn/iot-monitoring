@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import AutomationCard from "./AutomationCard";
 import { animate, stagger } from "animejs";
 
-export default function DevicesPage({ sensorData, onRuleTriggered }) {
+export default function DevicesPage({ sensorData, onRuleTriggered, automationRules, automationLoading, updateAutomationRule }) {
     const [devices, setDevices] = useState({
         fan: false,
         pump: false,
@@ -14,22 +14,23 @@ export default function DevicesPage({ sensorData, onRuleTriggered }) {
     });
     const [loading, setLoading] = useState(true);
 
-    // Fetch device status from Firebase
+    // Real-time listener untuk status device
     useEffect(() => {
-        const fetchDevices = async () => {
-            try {
-                const docRef = doc(db, "devices", "controls");
-                const docSnap = await getDoc(docRef);
+        const docRef = doc(db, "devices", "controls");
+        const unsubscribe = onSnapshot(
+            docRef,
+            (docSnap) => {
                 if (docSnap.exists()) {
                     setDevices(docSnap.data());
                 }
-            } catch (error) {
-                console.error("Error fetching devices:", error);
-            } finally {
+                setLoading(false);
+            },
+            (error) => {
+                console.error("Error listening devices:", error);
                 setLoading(false);
             }
-        };
-        fetchDevices();
+        );
+        return () => unsubscribe();
     }, []);
 
     // Animations
@@ -143,7 +144,7 @@ export default function DevicesPage({ sensorData, onRuleTriggered }) {
 
             {/* Automation Rules Section */}
             <div className="device-card opacity-0">
-                <AutomationCard sensorData={sensorData} onRuleTriggered={onRuleTriggered} />
+                <AutomationCard sensorData={sensorData} rules={automationRules} loading={automationLoading} updateRule={updateAutomationRule} />
             </div>
 
             {/* Info */}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { db } from "@/lib/firebase";
 import DevicesPage from "@/components/DevicesPage";
+import useAutomationEngine from "@/hooks/useAutomationEngine";
 import DecisionSupportCard from "@/components/DecisionSupportCard";
 import AnimatedValue from "@/components/AnimatedValue";
 import CalendarHeatmap from "@/components/CalendarHeatmap";
@@ -14,7 +15,7 @@ import EmptyState from "@/components/EmptyState";
 import { ToastProvider, useToast } from "@/components/ToastNotification";
 import { SkeletonCard, SkeletonChart, SkeletonDecision } from "@/components/SkeletonLoader";
 import { formatDate, formatTime } from "@/lib/dateFormat";
-import { analyzeEnvironmentalConditions } from "@/lib/dssEngine";
+
 import { animate, stagger } from "animejs";
 import {
   collection,
@@ -23,7 +24,7 @@ import {
   limit,
   getDocs,
   startAfter,
-  Timestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import {
   LineChart,
@@ -46,6 +47,22 @@ const THRESHOLDS = {
 
 function DashboardContent() {
   const toast = useToast();
+
+  // Automation engine - always active regardless of current page
+  const handleRuleTriggered = useCallback((device, status, reason) => {
+    const deviceNames = { fan: 'Kipas', pump: 'Pompa', light: 'Lampu' };
+    const action = status ? 'ON' : 'OFF';
+    toast.info(`🤖 ${deviceNames[device] || device} ${action} — ${reason}`);
+  }, [toast]);
+
+  // This ref is needed to avoid stale closure in useAutomationEngine
+  const handleRuleTriggeredRef = useRef(handleRuleTriggered);
+  handleRuleTriggeredRef.current = handleRuleTriggered;
+
+  const stableHandleRuleTriggered = useCallback((...args) => {
+    handleRuleTriggeredRef.current(...args);
+  }, []);
+
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sensor, setSensor] = useState(null);
   const [history, setHistory] = useState([]);
@@ -60,9 +77,9 @@ function DashboardContent() {
   const hasAnimatedIn = useRef(false);
   const lastAlertRef = useRef({ temperature: null, humidity: null, soil_moisture: null });
 
-  const handleRuleTriggered = useCallback((message) => {
-    toast.info(message);
-  }, [toast]);
+  // Automation engine hook - always active regardless of current page
+  const { rules: automationRules, loading: automationLoading, updateRule: updateAutomationRule } = useAutomationEngine(sensor, stableHandleRuleTriggered);
+
 
   const checkAndAlert = useCallback((sensorData) => {
     if (!sensorData) return;
@@ -212,7 +229,7 @@ function DashboardContent() {
         hasAnimatedIn.current = true;
       }
     }
-  }, [loading, sensor !== null, currentPage]);
+  }, [loading, sensor, currentPage]);
 
   useEffect(() => {
     if (!loading && sensor && currentPage === "dashboard") {
@@ -224,29 +241,54 @@ function DashboardContent() {
         duration: 2500,
       });
     }
-  }, [loading, sensor !== null, currentPage]);
+  }, [loading, sensor, currentPage]);
 
   useEffect(() => {
+    // Initial fetch untuk history (tetap pakai getDocs)
     fetchData();
-    const interval = setInterval(() => {
-      // Only update sensor (latest), don't reload all history
-      const q = query(
-        collection(db, "sensor_data"),
-        orderBy("created_at", "desc"),
-        limit(1)
-      );
-      getDocs(q).then(snapshot => {
-        if (snapshot.docs.length > 0) {
-          const d = snapshot.docs[0].data();
-          const created = d.created_at?.toDate?.() ?? new Date();
-          const newSensor = { id: snapshot.docs[0].id, ...d, created_at: created };
+
+    // Real-time listener untuk sensor terbaru
+    const q = query(
+      collection(db, "sensor_data"),
+      orderBy("created_at", "desc"),
+      limit(1)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+          const created = data.created_at?.toDate?.() ?? new Date();
+
+          const newSensor = {
+            id: doc.id,
+            ...data,
+            created_at: created,
+          };
+
           setSensor(newSensor);
           setLastUpdated(new Date());
           setConnectionStatus("connected");
+          checkAndAlert(newSensor);
+
+          // Tambahkan data baru ke history agar chart ikut update
+          setHistory((prev) => {
+            // Cegah duplikasi jika doc.id sudah ada
+            if (prev.length > 0 && prev[0].id === doc.id) return prev;
+            return [newSensor, ...prev];
+          });
         }
-      });
-    }, 5000);
-    return () => clearInterval(interval);
+      },
+      (error) => {
+        console.error("Listener error:", error);
+        setConnectionStatus("error");
+      }
+    );
+
+    // Cleanup listener saat unmount
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -255,10 +297,10 @@ function DashboardContent() {
     const checkConnection = () => {
       const now = new Date();
       const diff = now.getTime() - lastUpdated.getTime();
-      if (diff > 15000) {
-        setConnectionStatus("stale");
-      } else if (diff > 30000) {
+      if (diff > 30000) {
         setConnectionStatus("disconnected");
+      } else if (diff > 15000) {
+        setConnectionStatus("stale");
       }
     };
 
@@ -267,7 +309,26 @@ function DashboardContent() {
   }, [lastUpdated]);
 
   const lineData = useMemo(() => {
-    const reversed = [...history].reverse();
+    let filteredHistory = [...history];
+
+    if (timeFilter !== "all") {
+      const now = new Date();
+      const filterMs = {
+        "1h": 60 * 60 * 1000,
+        "6h": 6 * 60 * 60 * 1000,
+        "12h": 12 * 60 * 60 * 1000,
+        "1d": 24 * 60 * 60 * 1000,
+        "2d": 48 * 60 * 60 * 1000,
+        "7d": 7 * 24 * 60 * 60 * 1000,
+      }[timeFilter];
+
+      if (filterMs) {
+        const cutoff = now.getTime() - filterMs;
+        filteredHistory = history.filter(d => d.created_at.getTime() >= cutoff);
+      }
+    }
+
+    const reversed = filteredHistory.reverse();
     return reversed.map((d) => ({
       time: formatTime(d.created_at),
       date: formatDate(d.created_at),
@@ -276,7 +337,7 @@ function DashboardContent() {
       kelembapan: d.humidity != null ? Number(d.humidity) : null,
       kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
-  }, [history]);
+  }, [history, timeFilter]);
 
   const sparklineData = useMemo(() => {
     const reversed = [...history].reverse().slice(-15);
@@ -405,7 +466,10 @@ function DashboardContent() {
         {currentPage === "devices" && (
           <DevicesPage
             sensorData={sensor}
-            onRuleTriggered={handleRuleTriggered}
+            onRuleTriggered={stableHandleRuleTriggered}
+            automationRules={automationRules}
+            automationLoading={automationLoading}
+            updateAutomationRule={updateAutomationRule}
           />
         )}
 

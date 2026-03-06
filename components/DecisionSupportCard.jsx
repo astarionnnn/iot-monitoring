@@ -36,7 +36,7 @@ export default function DecisionSupportCard({ sensorData }) {
                 hasAnimatedIn.current = true;
             }
         }
-    }, [result.riskColor, result !== null]);
+    }, [result?.riskColor]);
 
     if (!result) return null;
 
