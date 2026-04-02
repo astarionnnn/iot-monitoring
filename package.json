@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "animejs": "^4.3.5",
     "date-fns": "^4.1.0",
     "firebase": "^12.8.0",
