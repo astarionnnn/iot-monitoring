@@ -443,7 +443,7 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                                     style={{ backgroundColor: range.color }}
                                     title={range.label}
                                 />
-                                <span className="text-[10px] sm:text-xs text-zinc-400 hidden sm:inline">{range.label}</span>
+                                <span className="text-[10px] sm:text-xs text-zinc-400">{range.label}</span>
                             </div>
                         ))}
                     </div>
