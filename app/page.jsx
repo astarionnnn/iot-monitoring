@@ -551,7 +551,7 @@ function DashboardContent() {
                       filter={
                         <div className="flex flex-wrap items-center gap-2">
                           <TimeFilter currentFilter={timeFilter} onFilterChange={setTimeFilter} />
-                          <ExportMenu data={history} toast={toast} />
+                          <ExportMenu data={history} currentSensor={sensor} timeFilter={timeFilter} toast={toast} />
                         </div>
                       }
                     >
