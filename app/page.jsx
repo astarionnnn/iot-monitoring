@@ -267,7 +267,7 @@ function DashboardContent() {
             }
           }
         });
-        
+
         if (!snapshot.empty) {
           const doc = snapshot.docs[0];
           const data = doc.data();

@@ -16,23 +16,23 @@ function avg(arr) {
 
 // Map timeFilter key → label Indonesia
 const FILTER_LABELS = {
-    "1h":  "1 Jam Terakhir",
-    "6h":  "6 Jam Terakhir",
+    "1h": "1 Jam Terakhir",
+    "6h": "6 Jam Terakhir",
     "12h": "12 Jam Terakhir",
-    "1d":  "1 Hari Terakhir",
-    "2d":  "2 Hari Terakhir",
-    "7d":  "7 Hari Terakhir",
+    "1d": "1 Hari Terakhir",
+    "2d": "2 Hari Terakhir",
+    "7d": "7 Hari Terakhir",
     "all": "Semua Data",
 };
 
 // Map timeFilter key → milliseconds
 const FILTER_MS = {
-    "1h":  1 * 60 * 60 * 1000,
-    "6h":  6 * 60 * 60 * 1000,
+    "1h": 1 * 60 * 60 * 1000,
+    "6h": 6 * 60 * 60 * 1000,
     "12h": 12 * 60 * 60 * 1000,
-    "1d":  24 * 60 * 60 * 1000,
-    "2d":  48 * 60 * 60 * 1000,
-    "7d":  7 * 24 * 60 * 60 * 1000,
+    "1d": 24 * 60 * 60 * 1000,
+    "2d": 48 * 60 * 60 * 1000,
+    "7d": 7 * 24 * 60 * 60 * 1000,
 };
 
 export default function DataExport({ data, currentSensor, timeFilter = "all" }) {
@@ -183,16 +183,16 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
 
             // ── Compute stats dari data yang sudah difilter ───────────────
             const temps = filteredData.map((d) => d.temperature).filter((v) => v != null);
-            const hums  = filteredData.map((d) => d.humidity).filter((v) => v != null);
+            const hums = filteredData.map((d) => d.humidity).filter((v) => v != null);
             const soils = filteredData.map((d) => d.soil_moisture).filter((v) => v != null);
             const rainCount = filteredData.filter((d) => d.rain_status).length;
 
             // filteredData[0] = terbaru, filteredData[last] = terlama
             const dateRange = filteredData.length > 0
                 ? {
-                      from: filteredData[filteredData.length - 1].created_at, // terlama
-                      to:   filteredData[0].created_at,                       // terbaru
-                  }
+                    from: filteredData[filteredData.length - 1].created_at, // terlama
+                    to: filteredData[0].created_at,                       // terbaru
+                }
                 : null;
 
             // ── Helper: draw header on every new page ─────────────────────
@@ -276,8 +276,8 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
 
             const infoRows = [
                 ["Tanggal Generate", format(now, "EEEE, dd MMMM yyyy", { locale: localeId })],
-                ["Waktu Generate",   format(now, "HH:mm:ss 'WIB'")],
-                ["Filter Waktu",     filterLabel],
+                ["Waktu Generate", format(now, "HH:mm:ss 'WIB'")],
+                ["Filter Waktu", filterLabel],
                 ["Total Data Diexport", `${filteredData.length.toLocaleString("id-ID")} rekaman`],
                 [
                     "Rentang Waktu Data",
@@ -412,30 +412,30 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                     body: [
                         temps.length > 0
                             ? [
-                                  "Suhu (°C)",
-                                  avg(temps).toFixed(2),
-                                  Math.min(...temps).toFixed(2),
-                                  Math.max(...temps).toFixed(2),
-                                  temps.length.toLocaleString("id-ID"),
-                              ]
+                                "Suhu (°C)",
+                                avg(temps).toFixed(2),
+                                Math.min(...temps).toFixed(2),
+                                Math.max(...temps).toFixed(2),
+                                temps.length.toLocaleString("id-ID"),
+                            ]
                             : ["Suhu (°C)", "—", "—", "—", "0"],
                         hums.length > 0
                             ? [
-                                  "Kelembapan Udara (%)",
-                                  avg(hums).toFixed(2),
-                                  Math.min(...hums).toFixed(2),
-                                  Math.max(...hums).toFixed(2),
-                                  hums.length.toLocaleString("id-ID"),
-                              ]
+                                "Kelembapan Udara (%)",
+                                avg(hums).toFixed(2),
+                                Math.min(...hums).toFixed(2),
+                                Math.max(...hums).toFixed(2),
+                                hums.length.toLocaleString("id-ID"),
+                            ]
                             : ["Kelembapan Udara (%)", "—", "—", "—", "0"],
                         soils.length > 0
                             ? [
-                                  "Kelembapan Tanah (%)",
-                                  avg(soils).toFixed(2),
-                                  Math.min(...soils).toFixed(2),
-                                  Math.max(...soils).toFixed(2),
-                                  soils.length.toLocaleString("id-ID"),
-                              ]
+                                "Kelembapan Tanah (%)",
+                                avg(soils).toFixed(2),
+                                Math.min(...soils).toFixed(2),
+                                Math.max(...soils).toFixed(2),
+                                soils.length.toLocaleString("id-ID"),
+                            ]
                             : ["Kelembapan Tanah (%)", "—", "—", "—", "0"],
                         [
                             "Status Hujan",
@@ -500,7 +500,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
             const displayedData = filteredData.slice(0, maxRows);
             const truncated = filteredData.length > maxRows;
             pdf.text(
-                `Filter: ${filterLabel}  |  Menampilkan ${displayedData.length.toLocaleString("id-ID")}${truncated ? ` dari ${filteredData.length.toLocaleString("id-ID")}` : ""} rekaman  |  Urut: dari Terbaru ke Terlama`,
+                `Filter: ${filterLabel}  |  Menampilkan ${displayedData.length.toLocaleString("id-ID")}${truncated ? ` dari ${filteredData.length.toLocaleString("id-ID")}` : ""} rekaman  |  Urut: Terbaru -> Terlama`,
                 margin,
                 y + 4
             );

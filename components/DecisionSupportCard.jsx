@@ -4,15 +4,14 @@ import { animate, stagger } from "animejs";
 
 export default function DecisionSupportCard({ sensorData }) {
     const cardRef = useRef(null);
+    const listRef = useRef(null);
     const result = useMemo(() => {
         return analyzeEnvironmentalConditions(sensorData);
     }, [sensorData]);
 
-    const hasAnimatedIn = useRef(false);
-
+    // Pulse animation on card when risk color changes
     useEffect(() => {
-        if (result) {
-            // Pulse animation on risk change - only re-trigger if riskColor changes
+        if (result && cardRef.current) {
             animate(cardRef.current, {
                 boxShadow: [
                     '0 0 0px rgba(0,0,0,0)',
@@ -23,20 +22,22 @@ export default function DecisionSupportCard({ sensorData }) {
                 easing: 'easeInOutQuad',
                 loop: true
             });
-
-            // Staggered entrance for recommendations - only run once per visit
-            if (!hasAnimatedIn.current) {
-                animate('.rec-item', {
-                    opacity: [0, 1],
-                    translateX: [-15, 0],
-                    delay: stagger(120, { start: 200 }),
-                    easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                    duration: 900
-                });
-                hasAnimatedIn.current = true;
-            }
         }
     }, [result?.riskColor]);
+
+    // Stagger animation — scoped to listRef, re-triggers when recommendations change
+    useEffect(() => {
+        if (result && listRef.current) {
+            const items = listRef.current.querySelectorAll('.rec-item');
+            animate(items, {
+                opacity: [0, 1],
+                translateX: [-15, 0],
+                delay: stagger(120, { start: 200 }),
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                duration: 900
+            });
+        }
+    }, [result?.recommendations?.length]);
 
     if (!result) return null;
 
@@ -71,7 +72,7 @@ export default function DecisionSupportCard({ sensorData }) {
                         Berdasarkan analisis kondisi lingkungan terkini (Suhu, Kelembapan, Tanah), sistem merekomendasikan:
                     </p>
 
-                    <ul className="space-y-3">
+                    <ul ref={listRef} className="space-y-3">
                         {recommendations.map((rec, index) => (
                             <li key={index} className="rec-item opacity-0 flex flex-col gap-1">
                                 <div className="flex items-start gap-3 text-sm text-zinc-200">
