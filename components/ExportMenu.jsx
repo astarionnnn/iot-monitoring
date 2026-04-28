@@ -236,7 +236,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 pdf.setFontSize(7);
                 pdf.setTextColor(120, 120, 120);
                 pdf.text(
-                    "© 2026 IoT Monitoring Dashboard — Sistem Monitoring Sensor Lingkungan Otomatis",
+                    "© 2026 IoT Monitoring Dashboard — Sistem Monitoring Sensor Lingkungan",
                     pW / 2,
                     pH - 5,
                     { align: "center" }
@@ -321,28 +321,28 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                     {
                         label: "Suhu",
                         value: `${Number(currentSensor.temperature).toFixed(1)} °C`,
-                        icon: "🌡",
+                        // icon: "🌡",
                         r: 239, g: 68, b: 68,   // red
                         lr: 254, lg: 242, lb: 242,
                     },
                     {
                         label: "Kelembapan Udara",
                         value: `${Number(currentSensor.humidity).toFixed(1)} %`,
-                        icon: "💧",
+                        // icon: "💧",
                         r: 59, g: 130, b: 246,   // blue
                         lr: 239, lg: 246, lb: 255,
                     },
                     {
                         label: "Kelembapan Tanah",
                         value: `${Number(currentSensor.soil_moisture).toFixed(1)} %`,
-                        icon: "🌱",
+                        // icon: "🌱",
                         r: 34, g: 197, b: 94,    // green
                         lr: 240, lg: 253, lb: 244,
                     },
                     {
                         label: "Status Cuaca",
-                        value: currentSensor.rain_status ? "Hujan 🌧" : "Cerah ☀",
-                        icon: currentSensor.rain_status ? "🌧" : "☀",
+                        value: currentSensor.rain_status ? "Hujan" : "Cerah",
+                        // icon: currentSensor.rain_status ? "🌧" : "☀",
                         r: 168, g: 85, b: 247,   // purple
                         lr: 250, lg: 245, lb: 255,
                     },
@@ -500,7 +500,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
             const displayedData = filteredData.slice(0, maxRows);
             const truncated = filteredData.length > maxRows;
             pdf.text(
-                `Filter: ${filterLabel}  |  Menampilkan ${displayedData.length.toLocaleString("id-ID")}${truncated ? ` dari ${filteredData.length.toLocaleString("id-ID")}` : ""} rekaman  |  Urut: Terbaru → Terlama`,
+                `Filter: ${filterLabel}  |  Menampilkan ${displayedData.length.toLocaleString("id-ID")}${truncated ? ` dari ${filteredData.length.toLocaleString("id-ID")}` : ""} rekaman  |  Urut: dari Terbaru ke Terlama`,
                 margin,
                 y + 4
             );
