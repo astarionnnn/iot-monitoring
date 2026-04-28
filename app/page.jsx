@@ -257,6 +257,17 @@ function DashboardContent() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        // Pengukuran latensi end-to-end menggunakan window._sendTime
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            if (window._sendTime) {
+              const latency = Date.now() - window._sendTime;
+              console.log(`Latensi Keseluruhan (Send → Dashboard): ${latency} ms`);
+              window._sendTime = null; // reset untuk pengukuran berikutnya
+            }
+          }
+        });
+        
         if (!snapshot.empty) {
           const doc = snapshot.docs[0];
           const data = doc.data();
