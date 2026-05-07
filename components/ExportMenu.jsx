@@ -672,7 +672,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                                 <span>📑</span>
                                 <span>PDF Report</span>
                             </button>
-                            <div className="my-1 border-t border-zinc-800" />
+                            {/* <div className="my-1 border-t border-zinc-800" />
                             <button
                                 onClick={copyToClipboard}
                                 onMouseEnter={handleMouseEnter}
@@ -681,7 +681,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                             >
                                 <span>📎</span>
                                 <span>Copy</span>
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </>

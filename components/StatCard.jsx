@@ -1,7 +1,7 @@
 "use client";
 
-import CircularGauge from "@/components/CircularGauge";
-import Sparkline from "@/components/Sparkline";
+// import CircularGauge from "@/components/CircularGauge";
+// import Sparkline from "@/components/Sparkline";
 
 export default function StatCard({ value, unit, label, icon, trend, color, gauge, sparkline }) {
     const colorClasses = {
@@ -50,20 +50,20 @@ export default function StatCard({ value, unit, label, icon, trend, color, gauge
                         <p className="mt-2 text-xs text-zinc-500 transition-colors duration-300 group-hover:text-zinc-400">{trend}</p>
                     )}
                     {/* Sparkline */}
-                    {sparkline && sparkline.length > 1 && (
+                    {/* {sparkline && sparkline.length > 1 && (
                         <div className="mt-3">
                             <Sparkline data={sparkline} color={color === "red" ? "#ef4444" : color === "blue" ? "#3b82f6" : "#22c55e"} width={100} height={28} />
                         </div>
-                    )}
+                    )}  */}
                 </div>
                 <div className="flex flex-col items-center gap-2">
                     <div className="text-3xl opacity-50 transition-all duration-300 group-hover:scale-125 group-hover:opacity-70 group-hover:rotate-6 sm:text-4xl">
                         {icon}
                     </div>
                     {/* Circular Gauge */}
-                    {gauge && (
+                    {/* {gauge && (
                         <CircularGauge value={gauge.value} min={gauge.min} max={gauge.max} color={color} size={50} />
-                    )}
+                    )} */}
                 </div>
             </div>
 

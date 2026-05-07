@@ -60,7 +60,7 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
                     onUpdate={(updates) => updateRule("pump", updates)}
                     showDuration
                 />
-                <RuleItem
+                {/* <RuleItem
                     device="light"
                     icon="💡"
                     name="Lampu"
@@ -68,7 +68,7 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
                     currentValue={sensorData?.humidity}
                     unit="%"
                     onUpdate={(updates) => updateRule("light", updates)}
-                />
+                /> */}
             </div>
 
             <div className="mt-6 rounded-xl bg-blue-500/10 border border-blue-500/20 p-4">

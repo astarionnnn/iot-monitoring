@@ -27,7 +27,7 @@ export async function GET(request) {
             await setDoc(controlRef, {
                 fan: false,
                 pump: false,
-                light: false,
+                // light: false,
                 created_at: serverTimestamp(),
             });
 
@@ -35,7 +35,7 @@ export async function GET(request) {
                 {
                     fan: false,
                     pump: false,
-                    light: false,
+                    // light: false,
                 },
                 { headers }
             );
@@ -48,7 +48,7 @@ export async function GET(request) {
             {
                 fan: data.fan ?? false,
                 pump: data.pump ?? false,
-                light: data.light ?? false,
+                // light: data.light ?? false,
             },
             { headers }
         );
@@ -85,15 +85,15 @@ export async function POST(request) {
 
         // UBAH: Gunakan collection "devices" dengan document "controls"
         const controlRef = doc(db, "devices", "controls");
-        
+
         // Prepare update data
         const updateData = {
             updated_at: serverTimestamp(),
         };
-        
+
         if (body.fan !== undefined) updateData.fan = body.fan;
         if (body.pump !== undefined) updateData.pump = body.pump;
-        if (body.light !== undefined) updateData.light = body.light;
+        // if (body.light !== undefined) updateData.light = body.light;
 
         await setDoc(controlRef, updateData, { merge: true });
 
@@ -110,7 +110,7 @@ export async function POST(request) {
                 data: {
                     fan: currentData.fan ?? false,
                     pump: currentData.pump ?? false,
-                    light: currentData.light ?? false,
+                    // light: currentData.light ?? false,   
                 },
             },
             { headers }

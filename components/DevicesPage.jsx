@@ -10,7 +10,7 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
     const [devices, setDevices] = useState({
         fan: false,
         pump: false,
-        light: false,
+        // light: false,
     });
     const [loading, setLoading] = useState(true);
 
@@ -100,7 +100,7 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
             </div>
 
             {/* Device Grid */}
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
                 <DeviceCard
                     name="Kipas Pendingin"
                     description="Kontrol kipas ruangan"
@@ -112,7 +112,7 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
                     }
                     isOn={devices.fan}
                     onToggle={() => toggleDevice("fan")}
-                    stats="Kecepatan: Auto"
+                // stats="Kecepatan: Auto"
                 />
 
                 <DeviceCard
@@ -125,10 +125,10 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
                     }
                     isOn={devices.pump}
                     onToggle={() => toggleDevice("pump")}
-                    stats="Mode: Manual"
+                // stats="Mode: Manual"
                 />
 
-                <DeviceCard
+                {/* <DeviceCard
                     name="Lampu Area"
                     description="Pencahayaan sensor"
                     icon={
@@ -139,7 +139,7 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
                     isOn={devices.light}
                     onToggle={() => toggleDevice("light")}
                     stats="Brightness: 100%"
-                />
+                /> */}
             </div>
 
             {/* Automation Rules Section */}
