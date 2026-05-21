@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Dashboard Monitoring IoT",
-  description: "Dashboard monitoring data sensor IoT - suhu, kelembapan, tanah, hujan",
+  title: "Purwarupa Dashboard Rejofarm Integrated Farming",
+  description: "Purwarupa Dashboard Rejofarm Integrated Farming - Monitoring Data Sensor IoT secara Real-time",
+  icons: {
+    icon: "/logo-rejofarm.jpeg",
+  },
 };
 
 const themeScript = `
@@ -30,6 +33,7 @@ export default function RootLayout({ children }) {
     <html lang="id" suppressHydrationWarning className="dark" data-theme="dark">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="icon" href="/logo-rejofarm.jpeg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

@@ -415,11 +415,23 @@ function DashboardContent() {
         <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-sm shadow-md shadow-blue-500/20">
-                  🌡
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-zinc-900/80 p-1.5 rounded-lg border border-zinc-800/80 shadow-inner">
+                  <img
+                    src="/logo-ugm.png"
+                    alt="Logo UGM"
+                    className="h-7 w-auto object-contain"
+                  />
+                  <div className="h-4 w-px bg-zinc-800" />
+                  <img
+                    src="/logo-rejofarm.jpeg"
+                    alt="Logo Rejofarm"
+                    className="h-7 w-auto rounded-md object-contain"
+                  />
                 </div>
-                <h1 className="text-base font-bold hidden sm:block">IoT Monitoring</h1>
+                <h1 className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent line-clamp-2 md:line-clamp-none max-w-[180px] sm:max-w-[320px] md:max-w-none leading-snug">
+                  Purwarupa Dashboard Rejofarm Integrated Farming
+                </h1>
               </div>
 
               <nav className="flex gap-1">
@@ -679,7 +691,7 @@ function DashboardContent() {
       <footer className="mt-12 border-t border-zinc-800/50 bg-zinc-950/50 py-8 md:mt-20">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <p className="text-sm text-zinc-500">© 2026 IoT Monitoring Dashboard. All rights reserved.</p>
+            <p className="text-sm text-zinc-500">© 2026 Purwarupa Dashboard Rejofarm Integrated Farming. All rights reserved.</p>
             <div className="flex gap-4 text-xs text-zinc-500">
               <span>Realtime Updates</span>
               <span>•</span>

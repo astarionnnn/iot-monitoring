@@ -210,8 +210,8 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 // Title
                 pdf.setTextColor(255, 255, 255);
                 pdf.setFont("helvetica", "bold");
-                pdf.setFontSize(14);
-                pdf.text("IoT Monitoring Dashboard", margin, 11);
+                pdf.setFontSize(11);
+                pdf.text("Purwarupa Dashboard Rejofarm Integrated Farming", margin, 11);
 
                 // Subtitle
                 pdf.setFont("helvetica", "normal");
@@ -236,7 +236,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 pdf.setFontSize(7);
                 pdf.setTextColor(120, 120, 120);
                 pdf.text(
-                    "© 2026 IoT Monitoring Dashboard — Sistem Monitoring Sensor Lingkungan",
+                    "© 2026 Purwarupa Dashboard Rejofarm Integrated Farming — Sistem Monitoring Sensor",
                     pW / 2,
                     pH - 5,
                     { align: "center" }
@@ -286,7 +286,7 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                         : "—",
                 ],
                 ["Sumber Data", "Firebase Firestore — Koleksi sensor_data"],
-                ["Sistem", "IoT Monitoring Dashboard v1.0"],
+                ["Sistem", "Purwarupa Dashboard Rejofarm Integrated Farming v1.0"],
             ];
 
             infoRows.forEach(([label, value], i) => {
