@@ -22,7 +22,6 @@ export function ToastProvider({ children }) {
         const newToast = { id, message, type, duration };
 
         setToasts(prev => {
-            // Limit to 5 toasts max
             const updated = [...prev, newToast];
             if (updated.length > 5) {
                 return updated.slice(-5);
@@ -30,7 +29,6 @@ export function ToastProvider({ children }) {
             return updated;
         });
 
-        // Auto remove after duration
         if (duration > 0) {
             setTimeout(() => {
                 removeToast(id);
@@ -105,7 +103,6 @@ function Toast({ toast, onRemove }) {
 
     useEffect(() => {
         if (toastRef.current) {
-            // Entrance animation
             animate(toastRef.current, {
                 translateX: [100, 0],
                 opacity: [0, 1],

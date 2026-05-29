@@ -9,7 +9,6 @@ export default function DecisionSupportCard({ sensorData }) {
         return analyzeEnvironmentalConditions(sensorData);
     }, [sensorData]);
 
-    // Pulse animation on card when risk color changes
     useEffect(() => {
         if (result && cardRef.current) {
             animate(cardRef.current, {
@@ -25,7 +24,6 @@ export default function DecisionSupportCard({ sensorData }) {
         }
     }, [result?.riskColor]);
 
-    // Stagger animation — scoped to listRef, re-triggers when recommendations change
     useEffect(() => {
         if (result && listRef.current) {
             const items = listRef.current.querySelectorAll('.rec-item');
@@ -104,7 +102,6 @@ export default function DecisionSupportCard({ sensorData }) {
                 </div>
             </div>
 
-            {/* Background Accent Animation */}
             <div className={`absolute -right-4 -top-4 h-24 w-24 rounded-full blur-3xl opacity-20 transition-opacity duration-500 group-hover:opacity-40 
         ${riskColor === 'red' ? 'bg-red-500' : riskColor === 'orange' ? 'bg-orange-500' : riskColor === 'yellow' ? 'bg-yellow-500' : 'bg-green-500'}`} />
         </div>

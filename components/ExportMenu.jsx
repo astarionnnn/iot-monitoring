@@ -5,16 +5,11 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { animate } from "animejs";
 
-// ─── Helper ──────────────────────────────────────────────────────────────────
-
 function avg(arr) {
     if (!arr.length) return null;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
-// Map timeFilter key → label Indonesia
 const FILTER_LABELS = {
     "1h": "1 Jam Terakhir",
     "6h": "6 Jam Terakhir",
@@ -25,7 +20,6 @@ const FILTER_LABELS = {
     "all": "Semua Data",
 };
 
-// Map timeFilter key → milliseconds
 const FILTER_MS = {
     "1h": 1 * 60 * 60 * 1000,
     "6h": 6 * 60 * 60 * 1000,
@@ -39,7 +33,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
     const [isExporting, setIsExporting] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
 
-    // Anime.js hover effect
     const handleMouseEnter = (e) => {
         animate(e.currentTarget, {
             translateX: 5,
@@ -78,7 +71,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
         }
     };
 
-    // ── Export CSV ──────────────────────────────────────────────────────────
     const exportToCSV = () => {
         if (!data || data.length === 0) {
             alert("Tidak ada data untuk di-export");
@@ -124,7 +116,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
         setShowMenu(false);
     };
 
-    // ── Export JSON ─────────────────────────────────────────────────────────
     const exportToJSON = () => {
         if (!data || data.length === 0) {
             alert("Tidak ada data untuk di-export");
@@ -159,7 +150,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
         setShowMenu(false);
     };
 
-    // ── Export PDF ──────────────────────────────────────────────────────────
     const exportToPDF = async () => {
         setIsExporting(true);
         try {
@@ -169,8 +159,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
             const margin = 15;
             const now = new Date();
 
-            // ── Filter data berdasarkan timeFilter ────────────────────────
-            // data dari Firestore sudah urut terbaru → terlama (desc)
             let filteredData = [...(data || [])];
             if (timeFilter !== "all" && FILTER_MS[timeFilter]) {
                 const cutoff = now.getTime() - FILTER_MS[timeFilter];
@@ -181,13 +169,11 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
 
             const filterLabel = FILTER_LABELS[timeFilter] || "Semua Data";
 
-            // ── Compute stats dari data yang sudah difilter ───────────────
             const temps = filteredData.map((d) => d.temperature).filter((v) => v != null);
             const hums = filteredData.map((d) => d.humidity).filter((v) => v != null);
             const soils = filteredData.map((d) => d.soil_moisture).filter((v) => v != null);
             const rainCount = filteredData.filter((d) => d.rain_status).length;
 
-            // filteredData[0] = terbaru, filteredData[last] = terlama
             const dateRange = filteredData.length > 0
                 ? {
                     from: filteredData[filteredData.length - 1].created_at, // terlama
@@ -195,41 +181,33 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 }
                 : null;
 
-            // ── Helper: draw header on every new page ─────────────────────
             const drawPageHeader = (pageNum, totalPages) => {
-                // Background gradient strip (simulated with two rects)
                 pdf.setFillColor(30, 64, 175);   // blue-800
                 pdf.rect(0, 0, pW, 28, "F");
                 pdf.setFillColor(79, 70, 229);   // indigo-600
                 pdf.rect(pW / 2, 0, pW / 2, 28, "F");
 
-                // Accent bar
                 pdf.setFillColor(99, 102, 241);  // indigo-500
                 pdf.rect(0, 26, pW, 2, "F");
 
-                // Title
                 pdf.setTextColor(255, 255, 255);
                 pdf.setFont("helvetica", "bold");
                 pdf.setFontSize(11);
                 pdf.text("Purwarupa Dashboard Rejofarm Integrated Farming", margin, 11);
 
-                // Subtitle
                 pdf.setFont("helvetica", "normal");
                 pdf.setFontSize(8);
                 pdf.text("Laporan Data Sensor Lingkungan", margin, 17);
 
-                // Generated timestamp (right-aligned)
                 const genText = `Dicetak: ${format(now, "dd MMM yyyy, HH:mm", { locale: localeId })}`;
                 pdf.text(genText, pW - margin, 11, { align: "right" });
 
-                // Page number
                 pdf.setFontSize(7);
                 pdf.text(`Halaman ${pageNum} / ${totalPages}`, pW - margin, 17, { align: "right" });
 
                 pdf.setTextColor(0, 0, 0);
             };
 
-            // ── Helper: draw footer ───────────────────────────────────────
             const drawPageFooter = () => {
                 pdf.setFillColor(245, 245, 245);
                 pdf.rect(0, pH - 12, pW, 12, "F");
@@ -244,27 +222,21 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 pdf.setTextColor(0, 0, 0);
             };
 
-            // ── Helper: rounded box ───────────────────────────────────────
             const drawBox = (x, y, w, h, fillR, fillG, fillB, strokeR, strokeG, strokeB) => {
                 pdf.setFillColor(fillR, fillG, fillB);
                 pdf.setDrawColor(strokeR, strokeG, strokeB);
                 pdf.roundedRect(x, y, w, h, 3, 3, "FD");
             };
 
-            // ─────────────────────────────────────────────────────────────
-            // PAGE 1 — Ringkasan & Data Terkini
-            // ─────────────────────────────────────────────────────────────
             drawPageHeader(1, 2);
             let y = 36;
 
-            // ── Section: Informasi Laporan ────────────────────────────────
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(11);
             pdf.setTextColor(30, 64, 175);
             pdf.text("Informasi Laporan", margin, y);
             y += 2;
 
-            // Divider
             pdf.setDrawColor(79, 70, 229);
             pdf.setLineWidth(0.5);
             pdf.line(margin, y, pW - margin, y);
@@ -302,7 +274,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
             });
             y += infoRows.length * 7 + 10;
 
-            // ── Section: Data Sensor Terkini ──────────────────────────────
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(11);
             pdf.setTextColor(30, 64, 175);
@@ -314,35 +285,30 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
             y += 8;
 
             if (currentSensor) {
-                // 4 metric cards in a row
                 const cardW = (pW - margin * 2 - 9) / 4;
                 const cardH = 28;
                 const cards = [
                     {
                         label: "Suhu",
                         value: `${Number(currentSensor.temperature).toFixed(1)} °C`,
-                        // icon: "🌡",
                         r: 239, g: 68, b: 68,   // red
                         lr: 254, lg: 242, lb: 242,
                     },
                     {
                         label: "Kelembapan Udara",
                         value: `${Number(currentSensor.humidity).toFixed(1)} %`,
-                        // icon: "💧",
                         r: 59, g: 130, b: 246,   // blue
                         lr: 239, lg: 246, lb: 255,
                     },
                     {
                         label: "Kelembapan Tanah",
                         value: `${Number(currentSensor.soil_moisture).toFixed(1)} %`,
-                        // icon: "🌱",
                         r: 34, g: 197, b: 94,    // green
                         lr: 240, lg: 253, lb: 244,
                     },
                     {
                         label: "Status Cuaca",
                         value: currentSensor.rain_status ? "Hujan" : "Cerah",
-                        // icon: currentSensor.rain_status ? "🌧" : "☀",
                         r: 168, g: 85, b: 247,   // purple
                         lr: 250, lg: 245, lb: 255,
                     },
@@ -350,23 +316,19 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
 
                 cards.forEach((card, i) => {
                     const cx = margin + i * (cardW + 3);
-                    // Card background
                     pdf.setFillColor(card.lr, card.lg, card.lb);
                     pdf.setDrawColor(card.r, card.g, card.b);
                     pdf.setLineWidth(0.3);
                     pdf.roundedRect(cx, y, cardW, cardH, 2, 2, "FD");
 
-                    // Top accent line
                     pdf.setFillColor(card.r, card.g, card.b);
                     pdf.rect(cx, y, cardW, 2, "F");
 
-                    // Label
                     pdf.setFont("helvetica", "normal");
                     pdf.setFontSize(7);
                     pdf.setTextColor(100, 100, 100);
                     pdf.text(card.label, cx + cardW / 2, y + 9, { align: "center" });
 
-                    // Value
                     pdf.setFont("helvetica", "bold");
                     pdf.setFontSize(13);
                     pdf.setTextColor(card.r, card.g, card.b);
@@ -375,7 +337,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
 
                 y += cardH + 6;
 
-                // Last update timestamp
                 pdf.setFont("helvetica", "italic");
                 pdf.setFontSize(8);
                 pdf.setTextColor(120, 120, 120);
@@ -393,7 +354,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 y += 10;
             }
 
-            // ── Section: Ringkasan Statistik ─────────────────────────────
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(11);
             pdf.setTextColor(30, 64, 175);
@@ -471,12 +431,8 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 y = pdf.lastAutoTable.finalY + 8;
             }
 
-            // Footer page 1
             drawPageFooter();
 
-            // ─────────────────────────────────────────────────────────────
-            // PAGE 2 — Tabel Data Historis
-            // ─────────────────────────────────────────────────────────────
             pdf.addPage();
             drawPageHeader(2, 2);
             y = 36;
@@ -491,11 +447,9 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
             pdf.line(margin, y, pW - margin, y);
             y += 4;
 
-            // Subtitle info
             pdf.setFont("helvetica", "italic");
             pdf.setFontSize(8);
             pdf.setTextColor(120, 120, 120);
-            // filteredData sudah urut terbaru → terlama (dari Firestore desc)
             const maxRows = 500;
             const displayedData = filteredData.slice(0, maxRows);
             const truncated = filteredData.length > maxRows;
@@ -556,7 +510,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                         5: { halign: "center", cellWidth: 34 },
                         6: { halign: "center", cellWidth: 20 },
                     },
-                    // Color "Hujan" rows and footer per page
                     didParseCell: (hookData) => {
                         if (
                             hookData.section === "body" &&
@@ -587,7 +540,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                 drawPageFooter();
             }
 
-            // ── Save ──────────────────────────────────────────────────────
             pdf.save(`laporan-sensor-${format(now, "yyyy-MM-dd-HHmm")}.pdf`);
             setShowMenu(false);
         } catch (error) {
@@ -598,30 +550,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
         }
     };
 
-    // ── Copy to Clipboard ───────────────────────────────────────────────────
-    const copyToClipboard = () => {
-        if (!data || data.length === 0) {
-            alert("Tidak ada data untuk di-copy");
-            return;
-        }
-
-        const text = data
-            .map(
-                (item) =>
-                    `${format(item.created_at, "yyyy-MM-dd HH:mm:ss")} | Suhu: ${item.temperature}°C | Udara: ${item.humidity}% | Tanah: ${item.soil_moisture}%`
-            )
-            .join("\n");
-
-        navigator.clipboard.writeText(text).then(
-            () => {
-                alert("Data berhasil di-copy ke clipboard!");
-                setShowMenu(false);
-            },
-            () => alert("Gagal copy data")
-        );
-    };
-
-    // ── Render ──────────────────────────────────────────────────────────────
     return (
         <div className="relative">
             <button
@@ -672,16 +600,6 @@ export default function DataExport({ data, currentSensor, timeFilter = "all" }) 
                                 <span>📑</span>
                                 <span>PDF Report</span>
                             </button>
-                            {/* <div className="my-1 border-t border-zinc-800" />
-                            <button
-                                onClick={copyToClipboard}
-                                onMouseEnter={handleMouseEnter}
-                                onMouseLeave={handleMouseLeave}
-                                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-300"
-                            >
-                                <span>📎</span>
-                                <span>Copy</span>
-                            </button> */}
                         </div>
                     </div>
                 </>

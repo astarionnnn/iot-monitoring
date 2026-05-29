@@ -3,9 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { animate } from "animejs";
 
-/**
- * Helper function to get local date string (YYYY-MM-DD) in user's timezone
- */
 function getLocalDateKey(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -13,11 +10,6 @@ function getLocalDateKey(date) {
     return `${year}-${month}-${day}`;
 }
 
-/**
- * CalendarHeatmap - Monthly calendar view showing daily sensor averages
- * @param {Array} data - Array of sensor readings with created_at dates
- * @param {string} dataKey - Which sensor to show (temperature, humidity, soil_moisture)
- */
 export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) {
     const now = new Date();
     const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -26,7 +18,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
     const [hoveredDay, setHoveredDay] = useState(null);
     const containerRef = useRef(null);
 
-    // Config for different data types
     const config = {
         temperature: {
             label: "Suhu",
@@ -65,13 +56,11 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
     const currentConfig = config[dataKey] || config.temperature;
 
-    // Process data into daily aggregates - FIXED: Use local timezone
     const dailyData = useMemo(() => {
         const dailyMap = new Map();
 
         data.forEach((reading) => {
             const date = new Date(reading.created_at);
-            // FIX: Use local date instead of UTC
             const dateKey = getLocalDateKey(date);
 
             if (!dailyMap.has(dateKey)) {
@@ -93,7 +82,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
             if (reading.rain_status) day.rain_count++;
         });
 
-        // Calculate averages
         dailyMap.forEach((day) => {
             day.avgTemperature = day.temperature.length > 0
                 ? day.temperature.reduce((a, b) => a + b, 0) / day.temperature.length
@@ -106,7 +94,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                 : null;
             day.dataPoints = day.readings.length;
 
-            // Store min/max for display
             day.minTemperature = day.temperature.length > 0 ? Math.min(...day.temperature) : null;
             day.maxTemperature = day.temperature.length > 0 ? Math.max(...day.temperature) : null;
             day.minHumidity = day.humidity.length > 0 ? Math.min(...day.humidity) : null;
@@ -118,7 +105,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
         return dailyMap;
     }, [data]);
 
-    // Generate calendar days for selected month
     const calendarDays = useMemo(() => {
         const firstDay = new Date(selectedYear, selectedMonth, 1);
         const lastDay = new Date(selectedYear, selectedMonth + 1, 0);
@@ -127,15 +113,12 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
         const days = [];
 
-        // Add empty cells for days before the 1st
         for (let i = 0; i < startDayOfWeek; i++) {
             days.push({ empty: true, dayIndex: `empty-${i}` });
         }
 
-        // Add days of the month
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(selectedYear, selectedMonth, day);
-            // FIX: Use local date key
             const dateKey = getLocalDateKey(date);
             const dayData = dailyData.get(dateKey);
 
@@ -151,7 +134,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
         return days;
     }, [selectedYear, selectedMonth, dailyData]);
 
-    // Get color for a value
     const getColor = (value) => {
         if (value == null) return null;
         for (const range of currentConfig.ranges) {
@@ -162,7 +144,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
         return currentConfig.ranges[currentConfig.ranges.length - 1].color;
     };
 
-    // Get value for display
     const getValue = (dayData) => {
         if (!dayData) return null;
         switch (dataKey) {
@@ -173,16 +154,13 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
         }
     };
 
-    // Day names
     const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
-    // Month names
     const monthNames = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
         "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
 
-    // Navigate months
     const goToPrevMonth = () => {
         if (selectedMonth === 0) {
             setSelectedMonth(11);
@@ -206,7 +184,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
     const isCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
 
-    // Animation on month change
     useEffect(() => {
         if (containerRef.current) {
             animate(".calendar-cell", {
@@ -221,12 +198,10 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
     const activeDay = hoveredDay || selectedDay;
 
-    // Stats for selected month - FIXED VERSION
     const monthStats = useMemo(() => {
         const dailyAverages = [];
         let totalDataPoints = 0;
 
-        // Arrays to collect ALL raw values (not just averages)
         const allTemperatures = [];
         const allHumidities = [];
         const allSoilMoistures = [];
@@ -237,7 +212,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                 if (v != null) dailyAverages.push(v);
                 totalDataPoints += day.dayData.dataPoints;
 
-                // Collect all raw readings for accurate min/max
                 if (day.dayData.temperature && day.dayData.temperature.length > 0) {
                     allTemperatures.push(...day.dayData.temperature);
                 }
@@ -252,7 +226,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
         if (dailyAverages.length === 0) return null;
 
-        // Get min/max based on current metric from ALL readings (not averages)
         let minValue, maxValue;
 
         switch (dataKey) {
@@ -284,7 +257,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
     return (
         <div ref={containerRef} className="space-y-5">
-            {/* Month Navigation */}
             <div className="flex items-center justify-between">
                 <button
                     onClick={goToPrevMonth}
@@ -322,7 +294,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                 </button>
             </div>
 
-            {/* Month Stats */}
             {monthStats && (
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800/50 border border-zinc-700/30">
@@ -344,10 +315,8 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                 </div>
             )}
 
-            {/* Calendar Grid */}
             <div className="flex justify-center">
                 <div className="w-full max-w-md rounded-xl bg-zinc-900/50 border border-zinc-800/50 p-3 sm:p-4 overflow-hidden">
-                    {/* Day Headers */}
                     <div className="grid grid-cols-7 gap-1 mb-2">
                         {dayNames.map((day, i) => (
                             <div
@@ -360,7 +329,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                         ))}
                     </div>
 
-                    {/* Calendar Cells */}
                     <div className="grid grid-cols-7 gap-1">
                         {calendarDays.map((day, index) => {
                             if (day.empty) {
@@ -369,7 +337,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
 
                             const value = getValue(day.dayData);
                             const color = getColor(value);
-                            // FIX: Compare with local date
                             const isToday = day.dateKey === getLocalDateKey(new Date());
                             const hasData = day.dayData && day.dayData.dataPoints > 0;
                             const isSelected = activeDay?.dateKey === day.dateKey;
@@ -391,7 +358,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                                         boxShadow: hasData ? `0 4px 20px ${color}40` : undefined,
                                     }}
                                 >
-                                    {/* Day Number */}
                                     <div className={`absolute top-1 left-1.5 sm:top-2 sm:left-2 text-xs sm:text-sm font-bold ${hasData
                                         ? "text-white/90"
                                         : isSunday || isSaturday
@@ -401,14 +367,12 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                                         {day.dayNumber}
                                     </div>
 
-                                    {/* Value Display */}
                                     {hasData && (
                                         <div className="absolute bottom-1 right-1.5 sm:bottom-2 sm:right-2 text-[10px] sm:text-xs font-semibold text-white/80">
                                             {value?.toFixed(0)}{currentConfig.unit}
                                         </div>
                                     )}
 
-                                    {/* Data Points Indicator */}
                                     {hasData && (
                                         <div className="absolute bottom-1 left-1.5 sm:bottom-2 sm:left-2">
                                             <div className="flex gap-0.5">
@@ -419,7 +383,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                                         </div>
                                     )}
 
-                                    {/* Today Indicator */}
                                     {isToday && (
                                         <div className="absolute top-1 right-1.5 sm:top-2 sm:right-2">
                                             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
@@ -430,7 +393,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                         })}
                     </div>
 
-                    {/* Legend */}
                     <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-zinc-800/50">
                         <div className="flex items-center gap-1.5">
                             <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md sm:rounded-lg bg-zinc-800/80" />
@@ -450,11 +412,9 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                 </div>
             </div>
 
-            {/* Detail Card */}
             {activeDay && activeDay.dayData && (
                 <div className="rounded-xl border border-zinc-700/50 bg-gradient-to-br from-zinc-900 to-zinc-900/50 backdrop-blur-xl p-3 sm:p-5 shadow-2xl">
                     <div className="space-y-3 sm:space-y-4">
-                        {/* Date Header */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div
@@ -487,7 +447,6 @@ export default function CalendarHeatmap({ data = [], dataKey = "temperature" }) 
                             </button>
                         </div>
 
-                        {/* Stats Grid */}
                         <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border transition-all ${dataKey === 'temperature'
                                 ? 'bg-red-500/10 border-red-500/30'

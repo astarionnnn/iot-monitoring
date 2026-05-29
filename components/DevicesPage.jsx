@@ -2,19 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import AutomationCard from "./AutomationCard";
 import { animate, stagger } from "animejs";
 
-export default function DevicesPage({ sensorData, onRuleTriggered, automationRules, automationLoading, updateAutomationRule }) {
+export default function DevicesPage({ sensorData, automationRules, automationLoading, updateAutomationRule }) {
     const [devices, setDevices] = useState({
         fan: false,
         pump: false,
-        // light: false,
     });
     const [loading, setLoading] = useState(true);
 
-    // Real-time listener untuk status device
     useEffect(() => {
         const docRef = doc(db, "devices", "controls");
         const unsubscribe = onSnapshot(
@@ -33,7 +31,6 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
         return () => unsubscribe();
     }, []);
 
-    // Animations
     useEffect(() => {
         if (!loading) {
             animate(".device-card", {
@@ -54,7 +51,6 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
         }
     }, [loading]);
 
-    // Toggle device status
     const toggleDevice = async (deviceName) => {
         const newStatus = !devices[deviceName];
         const updatedDevices = { ...devices, [deviceName]: newStatus };
@@ -62,18 +58,15 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
         setDevices(updatedDevices);
 
         try {
-            // Update device control
             const docRef = doc(db, "devices", "controls");
             await setDoc(docRef, updatedDevices);
 
-            // Set automation mode to manual
             const automationRef = doc(db, "automation", "rules");
             await updateDoc(automationRef, {
                 [`${deviceName}.mode`]: "manual"
             });
         } catch (error) {
             console.error("Error updating device or automation mode:", error);
-            // Revert on error
             setDevices(devices);
         }
     };
@@ -91,7 +84,6 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div className="device-card opacity-0">
                 <h2 className="text-2xl font-bold">Kontrol Perangkat</h2>
                 <p className="mt-2 text-sm text-zinc-500">
@@ -99,7 +91,6 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
                 </p>
             </div>
 
-            {/* Device Grid */}
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
                 <DeviceCard
                     name="Kipas Pendingin"
@@ -112,7 +103,6 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
                     }
                     isOn={devices.fan}
                     onToggle={() => toggleDevice("fan")}
-                // stats="Kecepatan: Auto"
                 />
 
                 <DeviceCard
@@ -125,29 +115,13 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
                     }
                     isOn={devices.pump}
                     onToggle={() => toggleDevice("pump")}
-                // stats="Mode: Manual"
                 />
-
-                {/* <DeviceCard
-                    name="Lampu Area"
-                    description="Pencahayaan sensor"
-                    icon={
-                        <svg className="h-10 w-10 text-yellow-500 breathing-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                    }
-                    isOn={devices.light}
-                    onToggle={() => toggleDevice("light")}
-                    stats="Brightness: 100%"
-                /> */}
             </div>
 
-            {/* Automation Rules Section */}
             <div className="device-card opacity-0">
                 <AutomationCard sensorData={sensorData} rules={automationRules} loading={automationLoading} updateRule={updateAutomationRule} />
             </div>
 
-            {/* Info */}
             <div className="device-card opacity-0 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6 shadow-lg shadow-blue-500/10">
                 <div className="flex items-start gap-3">
                     <div className="text-2xl breathing-icon">ℹ️</div>
@@ -163,12 +137,11 @@ export default function DevicesPage({ sensorData, onRuleTriggered, automationRul
     );
 }
 
-function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
+function DeviceCard({ name, description, icon, isOn, onToggle }) {
     const toggleRef = useRef(null);
 
     const handleToggle = () => {
         onToggle();
-        // Micro-interaction: Spring bounce on click
         animate(toggleRef.current, {
             scale: [1, 1.1, 1],
             rotate: [0, 2, -2, 0],
@@ -177,7 +150,6 @@ function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
         });
     };
 
-    // Define color schemes for different devices
     const getColorScheme = (deviceName) => {
         if (deviceName.includes("Kipas")) {
             return {
@@ -186,33 +158,22 @@ function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
                 gradient: "from-blue-500/10 to-blue-600/5",
                 accentLine: "from-blue-500 to-cyan-500",
             };
-        } else if (deviceName.includes("Pompa")) {
-            return {
-                border: "border-cyan-500/20 hover:border-cyan-500/40",
-                shadow: "hover:shadow-xl hover:shadow-cyan-500/20",
-                gradient: "from-cyan-500/10 to-cyan-600/5",
-                accentLine: "from-cyan-500 to-blue-400",
-            };
-        } else {
-            return {
-                border: "border-yellow-500/20 hover:border-yellow-500/40",
-                shadow: "hover:shadow-xl hover:shadow-yellow-500/20",
-                gradient: "from-yellow-500/10 to-yellow-600/5",
-                accentLine: "from-yellow-500 to-orange-500",
-            };
         }
+        return {
+            border: "border-cyan-500/20 hover:border-cyan-500/40",
+            shadow: "hover:shadow-xl hover:shadow-cyan-500/20",
+            gradient: "from-cyan-500/10 to-cyan-600/5",
+            accentLine: "from-cyan-500 to-blue-400",
+        };
     };
 
     const colors = getColorScheme(name);
 
     return (
         <div className={`device-card opacity-0 group relative overflow-hidden rounded-2xl border bg-gradient-to-br backdrop-blur-sm p-4 sm:p-6 transition-all duration-500 md:hover:-translate-y-2 hover:shadow-2xl active:scale-[0.98] ${colors.border} ${colors.shadow} ${colors.gradient}`}>
-            {/* Animated overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
-            {/* Content wrapper */}
             <div className="relative">
-                {/* Header */}
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                         <div className="transition-all duration-300 group-hover:scale-125 group-hover:rotate-6">
@@ -225,7 +186,6 @@ function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
                     </div>
                 </div>
 
-                {/* Status */}
                 <div className="mt-4 flex items-center gap-2">
                     <div
                         className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${isOn ? "bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" : "bg-zinc-600 shadow-[0_0_5px_rgba(0,0,0,0.5)]"
@@ -236,10 +196,6 @@ function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
                     </span>
                 </div>
 
-                {/* Stats */}
-                <p className="mt-2 text-xs text-zinc-600 transition-colors duration-300 group-hover:text-zinc-500 tracking-wider uppercase font-bold">{stats}</p>
-
-                {/* Toggle */}
                 <div
                     ref={toggleRef}
                     className="mt-6 flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 transition-all duration-300 group-hover:border-zinc-700 group-hover:bg-zinc-900/50 shadow-inner"
@@ -257,9 +213,7 @@ function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
                 </div>
             </div>
 
-            {/* Bottom accent line */}
             <div className={`absolute bottom-0 left-0 h-1 w-0 bg-gradient-to-r transition-all duration-500 group-hover:w-full ${colors.accentLine}`} />
         </div>
     );
 }
-

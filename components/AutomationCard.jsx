@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { animate } from "animejs";
 
 export default function AutomationCard({ sensorData, rules, loading, updateRule }) {
-    // Entrance UI Animation
     useEffect(() => {
         if (!loading && rules) {
             animate(".automation-card", {
@@ -42,7 +41,6 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
 
             <div className="grid grid-cols-1 gap-4">
                 <RuleItem
-                    device="fan"
                     icon="❄️"
                     name="Kipas"
                     rule={rules.fan}
@@ -51,7 +49,6 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
                     onUpdate={(updates) => updateRule("fan", updates)}
                 />
                 <RuleItem
-                    device="pump"
                     icon="💧"
                     name="Pompa"
                     rule={rules.pump}
@@ -60,15 +57,6 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
                     onUpdate={(updates) => updateRule("pump", updates)}
                     showDuration
                 />
-                {/* <RuleItem
-                    device="light"
-                    icon="💡"
-                    name="Lampu"
-                    rule={rules.light}
-                    currentValue={sensorData?.humidity}
-                    unit="%"
-                    onUpdate={(updates) => updateRule("light", updates)}
-                /> */}
             </div>
 
             <div className="mt-6 rounded-xl bg-blue-500/10 border border-blue-500/20 p-4">
@@ -84,13 +72,12 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
     );
 }
 
-function RuleItem({ device, icon, name, rule, currentValue, unit, onUpdate, showDuration }) {
+function RuleItem({ icon, name, rule, currentValue, unit, onUpdate, showDuration }) {
     const isAuto = rule.mode === "auto";
 
     return (
         <div className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${isAuto ? "bg-zinc-950/40 border-zinc-800" : "bg-zinc-950/20 border-zinc-900 opacity-80"}`}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                {/* Left Side: Device Info & Mode Toggle */}
                 <div className="flex items-center gap-4">
                     <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-xl shadow-inner ${isAuto ? "bg-purple-500/20 text-purple-400" : "bg-zinc-800 text-zinc-500"}`}>
                         {icon}
@@ -108,9 +95,7 @@ function RuleItem({ device, icon, name, rule, currentValue, unit, onUpdate, show
                     </div>
                 </div>
 
-                {/* Right Side: Controls */}
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Mode Switcher */}
                     <div className="flex rounded-lg bg-zinc-900 p-1 border border-zinc-800">
                         <button
                             onClick={() => onUpdate({ mode: "auto" })}
@@ -126,7 +111,6 @@ function RuleItem({ device, icon, name, rule, currentValue, unit, onUpdate, show
                         </button>
                     </div>
 
-                    {/* Enable Toggle */}
                     <button
                         onClick={() => onUpdate({ enabled: !rule.enabled })}
                         className={`rounded-lg p-2 transition-all ${rule.enabled ? "bg-purple-500/20 text-purple-400" : "bg-zinc-800 text-zinc-500"}`}
@@ -137,7 +121,6 @@ function RuleItem({ device, icon, name, rule, currentValue, unit, onUpdate, show
                 </div>
             </div>
 
-            {/* Threshold Config (Only visible if enabled) */}
             {rule.enabled && (
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-zinc-800/50 pt-4">
                     <div className="flex flex-col gap-1.5">

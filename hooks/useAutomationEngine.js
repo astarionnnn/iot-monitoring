@@ -43,7 +43,6 @@ export default function useAutomationEngine(sensorData, onRuleTriggered) {
     const lastExecution = useRef({ fan: 0, pump: 0, light: 0 });
     const pumpTimeout = useRef(null);
 
-    // Subscribe to rules from Firebase
     useEffect(() => {
         const docRef = doc(db, "automation", "rules");
         const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -93,7 +92,6 @@ export default function useAutomationEngine(sensorData, onRuleTriggered) {
         }
     }, [rules]);
 
-    // Automation Logic - runs whenever sensorData or rules change
     useEffect(() => {
         if (!rules || !sensorData || loading) return;
 
@@ -103,7 +101,6 @@ export default function useAutomationEngine(sensorData, onRuleTriggered) {
             const rule = rules[device];
             if (!rule || !rule.enabled || rule.mode === "manual") return;
 
-            // Check cooldown
             if (now - lastExecution.current[device] < COOLDOWN_MS) return;
 
             const shouldTurnOn = rule.operator === ">"
@@ -120,7 +117,6 @@ export default function useAutomationEngine(sensorData, onRuleTriggered) {
                 lastExecution.current[device] = now;
                 toggleDevice(device, true, `${rule.condition}: ${sensorValue.toFixed(1)}${getUnit(rule.condition)}`);
 
-                // Handle Pump Duration
                 if (device === "pump" && rule.duration > 0) {
                     if (pumpTimeout.current) clearTimeout(pumpTimeout.current);
                     pumpTimeout.current = setTimeout(async () => {
@@ -142,7 +138,6 @@ export default function useAutomationEngine(sensorData, onRuleTriggered) {
 
     }, [sensorData, rules, loading, toggleDevice, getUnit]);
 
-    // Cleanup pump timeout on unmount
     useEffect(() => {
         return () => {
             if (pumpTimeout.current) clearTimeout(pumpTimeout.current);

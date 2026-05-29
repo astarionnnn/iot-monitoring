@@ -13,7 +13,6 @@ export async function POST(request) {
       rain_status
     } = body;
 
-    // simpan ke Firestore
     await addDoc(collection(db, "sensor_data"), {
       temperature,
       humidity,

@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { db } from "@/lib/firebase";
 import DevicesPage from "@/components/DevicesPage";
 import useAutomationEngine from "@/hooks/useAutomationEngine";
 import DecisionSupportCard from "@/components/DecisionSupportCard";
 import AnimatedValue from "@/components/AnimatedValue";
-import CalendarHeatmap from "@/components/CalendarHeatmap";
-import ExportMenu from "@/components/ExportMenu";
 import StatCard from "@/components/StatCard";
 import ChartCard from "@/components/ChartCard";
 import TimeFilter from "@/components/TimeFilter";
@@ -15,7 +14,6 @@ import EmptyState from "@/components/EmptyState";
 import { ToastProvider, useToast } from "@/components/ToastNotification";
 import { SkeletonCard, SkeletonChart, SkeletonDecision } from "@/components/SkeletonLoader";
 import { formatDate, formatTime } from "@/lib/dateFormat";
-
 import { animate, stagger } from "animejs";
 import {
   collection,
@@ -37,6 +35,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const ExportMenu = dynamic(() => import("@/components/ExportMenu"), {
+  ssr: false,
+  loading: () => <div className="h-9 w-24 animate-pulse rounded-lg bg-zinc-800/30" />
+});
+
+const CalendarHeatmap = dynamic(() => import("@/components/CalendarHeatmap"), {
+  ssr: false,
+  loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-zinc-800/30" />
+});
+
 const LINE_COLORS = { temperature: "#ef4444", humidity: "#3b82f6", soil_moisture: "#22c55e" };
 
 const THRESHOLDS = {
@@ -48,14 +56,12 @@ const THRESHOLDS = {
 function DashboardContent() {
   const toast = useToast();
 
-  // Automation engine - always active regardless of current page
   const handleRuleTriggered = useCallback((device, status, reason) => {
     const deviceNames = { fan: 'Kipas', pump: 'Pompa', light: 'Lampu' };
     const action = status ? 'ON' : 'OFF';
     toast.info(`🤖 ${deviceNames[device] || device} ${action} — ${reason}`);
   }, [toast]);
 
-  // This ref is needed to avoid stale closure in useAutomationEngine
   const handleRuleTriggeredRef = useRef(handleRuleTriggered);
   handleRuleTriggeredRef.current = handleRuleTriggered;
 
@@ -77,7 +83,6 @@ function DashboardContent() {
   const hasAnimatedIn = useRef(false);
   const lastAlertRef = useRef({ temperature: null, humidity: null, soil_moisture: null });
 
-  // Automation engine hook - always active regardless of current page
   const { rules: automationRules, loading: automationLoading, updateRule: updateAutomationRule } = useAutomationEngine(sensor, stableHandleRuleTriggered);
 
 
@@ -132,13 +137,12 @@ function DashboardContent() {
     }
   }, [toast]);
 
-  // Fetch initial data
   const fetchData = async () => {
     try {
       const q = query(
         collection(db, "sensor_data"),
         orderBy("created_at", "desc"),
-        limit(1000) // Initial load: 1000 data
+        limit(1000)
       );
 
       const snapshot = await getDocs(q);
@@ -171,7 +175,6 @@ function DashboardContent() {
     }
   };
 
-  // Load more data (pagination)
   const loadMoreData = async () => {
     if (!hasMore || loadingMore || !lastDoc) return;
 
@@ -244,10 +247,8 @@ function DashboardContent() {
   }, [loading, sensor, currentPage]);
 
   useEffect(() => {
-    // Initial fetch untuk history (tetap pakai getDocs)
     fetchData();
 
-    // Real-time listener untuk sensor terbaru
     const q = query(
       collection(db, "sensor_data"),
       orderBy("created_at", "desc"),
@@ -257,17 +258,6 @@ function DashboardContent() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        // Pengukuran latensi end-to-end menggunakan window._sendTime
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            if (window._sendTime) {
-              const latency = Date.now() - window._sendTime;
-              console.log(`Latensi Keseluruhan (Send → Dashboard): ${latency} ms`);
-              window._sendTime = null; // reset untuk pengukuran berikutnya
-            }
-          }
-        });
-
         if (!snapshot.empty) {
           const doc = snapshot.docs[0];
           const data = doc.data();
@@ -284,9 +274,7 @@ function DashboardContent() {
           setConnectionStatus("connected");
           checkAndAlert(newSensor);
 
-          // Tambahkan data baru ke history agar chart ikut update
           setHistory((prev) => {
-            // Cegah duplikasi jika doc.id sudah ada
             if (prev.length > 0 && prev[0].id === doc.id) return prev;
             return [newSensor, ...prev];
           });
@@ -298,7 +286,6 @@ function DashboardContent() {
       }
     );
 
-    // Cleanup listener saat unmount
     return () => unsubscribe();
   }, []);
 
@@ -349,15 +336,6 @@ function DashboardContent() {
       kelembapan_tanah: d.soil_moisture != null ? Number(d.soil_moisture) : null,
     }));
   }, [history, timeFilter]);
-
-  const sparklineData = useMemo(() => {
-    const reversed = [...history].reverse().slice(-15);
-    return {
-      temperature: reversed.map(d => d.temperature).filter(v => v != null),
-      humidity: reversed.map(d => d.humidity).filter(v => v != null),
-      soil_moisture: reversed.map(d => d.soil_moisture).filter(v => v != null),
-    };
-  }, [history]);
 
   const getFilterLabel = () => {
     switch (timeFilter) {
@@ -417,7 +395,6 @@ function DashboardContent() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <header className="sticky top-0 z-50 border-b border-zinc-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-3 pt-2 pb-0 sm:px-4 md:px-6">
-          {/* Top row: Logo + Title + Connection status */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2 bg-zinc-900/80 p-1 sm:p-1.5 rounded-lg border border-zinc-800/80 shadow-inner shrink-0">
@@ -466,7 +443,6 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* Bottom row: Nav tabs (always visible) */}
           <nav className="flex items-center gap-1 mt-2 -mb-[1px]">
             <button
               onClick={() => setCurrentPage("dashboard")}
@@ -494,7 +470,6 @@ function DashboardContent() {
         {currentPage === "devices" && (
           <DevicesPage
             sensorData={sensor}
-            onRuleTriggered={stableHandleRuleTriggered}
             automationRules={automationRules}
             automationLoading={automationLoading}
             updateAutomationRule={updateAutomationRule}
@@ -526,8 +501,6 @@ function DashboardContent() {
                         </svg>
                       }
                       color="red"
-                      gauge={{ value: sensor.temperature, min: 10, max: 45 }}
-                      sparkline={sparklineData.temperature}
                     />
                     <StatCard
                       value={<AnimatedValue value={Number(sensor.humidity)} decimals={1} />}
@@ -539,8 +512,6 @@ function DashboardContent() {
                         </svg>
                       }
                       color="blue"
-                      gauge={{ value: sensor.humidity, min: 0, max: 100 }}
-                      sparkline={sparklineData.humidity}
                     />
                     <StatCard
                       value={<AnimatedValue value={Number(sensor.soil_moisture)} decimals={1} />}
@@ -552,8 +523,6 @@ function DashboardContent() {
                         </svg>
                       }
                       color="green"
-                      gauge={{ value: sensor.soil_moisture, min: 0, max: 100 }}
-                      sparkline={sparklineData.soil_moisture}
                     />
                     <StatCard
                       value={sensor.rain_status ? "Hujan" : "Cerah"}
@@ -579,7 +548,7 @@ function DashboardContent() {
                       filter={
                         <div className="flex flex-wrap items-center gap-2">
                           <TimeFilter currentFilter={timeFilter} onFilterChange={setTimeFilter} />
-                          <ExportMenu data={history} currentSensor={sensor} timeFilter={timeFilter} toast={toast} />
+                          <ExportMenu data={history} currentSensor={sensor} timeFilter={timeFilter} />
                         </div>
                       }
                     >
@@ -629,7 +598,6 @@ function DashboardContent() {
                       </div>
                     </ChartCard>
 
-                    {/* Load More Button */}
                     {hasMore && (
                       <div className="mt-4 flex justify-center">
                         <button

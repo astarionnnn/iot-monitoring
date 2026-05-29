@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Dark Theme Variables (Default) */
 :root,
 .dark {
   --background: #0a0a0a;
@@ -16,21 +15,6 @@
   color-scheme: dark;
 }
 
-/* Light Theme Variables */
-.light {
-  --background: #fafafa;
-  --background-secondary: #f4f4f5;
-  --background-tertiary: #e4e4e7;
-  --foreground: #18181b;
-  --foreground-secondary: #52525b;
-  --foreground-muted: #71717a;
-  --border: #e4e4e7;
-  --border-hover: #d4d4d8;
-  --card-bg: rgba(255, 255, 255, 0.8);
-  --card-border: rgba(228, 228, 231, 0.8);
-  color-scheme: light;
-}
-
 body {
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   background: var(--background);
@@ -43,20 +27,16 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Theme transition for all elements */
 *,
 *::before,
 *::after {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Smooth theme switching */
-html.dark,
-html.light {
+html.dark {
   transition: background-color 0.3s ease;
 }
 
-/* Scrollbar styling - Dark */
 .dark::-webkit-scrollbar,
 .dark ::-webkit-scrollbar {
   width: 8px;
@@ -79,36 +59,11 @@ html.light {
   background: #52525b;
 }
 
-/* Scrollbar styling - Light */
-.light::-webkit-scrollbar,
-.light ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.light::-webkit-scrollbar-track,
-.light ::-webkit-scrollbar-track {
-  background: #f4f4f5;
-}
-
-.light::-webkit-scrollbar-thumb,
-.light ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
-  border-radius: 4px;
-}
-
-.light::-webkit-scrollbar-thumb:hover,
-.light ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1aa;
-}
-
-/* Selection */
 ::selection {
   background: #3b82f6;
   color: white;
 }
 
-/* Skeleton Shimmer Animation */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -128,15 +83,6 @@ html.light {
   animation: shimmer 1.5s infinite;
 }
 
-.light .skeleton-shimmer {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(0, 0, 0, 0.05) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-}
-
-/* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
 
   *,
@@ -148,24 +94,19 @@ html.light {
   }
 }
 
-/* Improve touch targets on mobile — only for standalone controls */
 @media (max-width: 768px) {
-  /* Let individual components handle their own touch sizing.
-     The blanket 44px rule was breaking compact button groups. */
   input[type="checkbox"] {
     min-height: 44px;
     min-width: 44px;
   }
 }
 
-/* Optimize animations */
 @supports (will-change: transform) {
   .group:hover {
     will-change: transform;
   }
 }
 
-/* Hide scrollbar but keep functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
