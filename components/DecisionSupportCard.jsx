@@ -58,10 +58,10 @@ export default function DecisionSupportCard({ sensorData }) {
     };
 
     return (
-        <div ref={cardRef} className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 transition-all duration-300 hover:shadow-xl ${colorStyles[riskColor]?.split(' ').slice(0, 3).join(' ') || colorStyles.green}`}>
+        <div ref={cardRef} className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-4 sm:p-6 transition-all duration-300 hover:shadow-xl ${colorStyles[riskColor]?.split(' ').slice(0, 3).join(' ') || colorStyles.green}`}>
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex-1 space-y-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <h3 className="text-xl font-bold text-white">Rekomendasi Tindakan</h3>
                         <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badgeColor[riskColor] || badgeColor.green}`}>
                             Risiko {riskLevel}
@@ -91,7 +91,7 @@ export default function DecisionSupportCard({ sensorData }) {
                     </ul>
                 </div>
 
-                <div className="flex shrink-0 items-center justify-center rounded-2xl bg-zinc-950/50 p-8 md:w-48">
+                <div className="flex shrink-0 items-center justify-center rounded-2xl bg-zinc-950/50 p-4 sm:p-6 md:p-8 md:w-48">
                     <div className="text-center">
                         <div className={`text-4xl transition-transform duration-500 group-hover:scale-110 ${riskColor === 'green' ? 'text-green-500' :
                             riskColor === 'yellow' ? 'text-yellow-500' :

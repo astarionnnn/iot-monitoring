@@ -29,7 +29,7 @@ export default function AutomationCard({ sensorData, rules, loading, updateRule 
     }
 
     return (
-        <div className="automation-card opacity-0 group relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-md p-6 shadow-xl shadow-purple-500/5">
+        <div className="automation-card opacity-0 group relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-md p-4 sm:p-6 shadow-xl shadow-purple-500/5">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                     <span className="text-2xl">🤖</span>

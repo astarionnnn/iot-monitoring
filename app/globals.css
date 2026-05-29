@@ -148,11 +148,10 @@ html.light {
   }
 }
 
-/* Improve touch targets on mobile */
+/* Improve touch targets on mobile — only for standalone controls */
 @media (max-width: 768px) {
-
-  button,
-  a,
+  /* Let individual components handle their own touch sizing.
+     The blanket 44px rule was breaking compact button groups. */
   input[type="checkbox"] {
     min-height: 44px;
     min-width: 44px;

@@ -12,12 +12,12 @@ export default function TimeFilter({ currentFilter, onFilterChange }) {
     ];
 
     return (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1 sm:gap-2">
             {filters.map((filter) => (
                 <button
                     key={filter.value}
                     onClick={() => onFilterChange(filter.value)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${currentFilter === filter.value
+                    className={`rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-medium transition-all ${currentFilter === filter.value
                         ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                         : "bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:border-zinc-600 hover:text-zinc-300"
                         }`}

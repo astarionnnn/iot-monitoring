@@ -386,23 +386,27 @@ function DashboardContent() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white">
         <header className="sticky top-0 z-50 border-b border-zinc-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
-          <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" />
-                <div className="h-5 w-24 rounded bg-zinc-800 skeleton-shimmer hidden sm:block" />
+          <div className="mx-auto max-w-7xl px-3 pt-2 pb-0 sm:px-4 md:px-6">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" />
+                <div className="h-4 w-20 sm:h-5 sm:w-24 rounded bg-zinc-800 skeleton-shimmer" />
               </div>
-              <div className="h-6 w-16 rounded bg-zinc-800 skeleton-shimmer" />
+              <div className="h-5 sm:h-6 w-14 sm:w-16 rounded bg-zinc-800 skeleton-shimmer" />
+            </div>
+            <div className="flex gap-2 mt-2 -mb-[1px]">
+              <div className="h-7 w-20 rounded-t-md bg-zinc-800 skeleton-shimmer" />
+              <div className="h-7 w-20 rounded-t-md bg-zinc-800 skeleton-shimmer" />
             </div>
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-          <div className="mb-6 h-8 w-48 rounded bg-zinc-800 skeleton-shimmer" />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8">
+          <div className="mb-4 sm:mb-6 h-7 sm:h-8 w-40 sm:w-48 rounded bg-zinc-800 skeleton-shimmer" />
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 mb-6 sm:mb-8">
             {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
           </div>
-          <div className="mb-6"><SkeletonDecision /></div>
+          <div className="mb-4 sm:mb-6"><SkeletonDecision /></div>
           <SkeletonChart />
         </main>
       </div>
@@ -412,51 +416,30 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <header className="sticky top-0 z-50 border-b border-zinc-800/50 bg-[#0a0a0a]/90 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-zinc-900/80 p-1.5 rounded-lg border border-zinc-800/80 shadow-inner">
-                  <img
-                    src="/logo-ugm.png"
-                    alt="Logo UGM"
-                    className="h-7 w-auto object-contain"
-                  />
-                  <div className="h-4 w-px bg-zinc-800" />
-                  <img
-                    src="/logo-rejofarm.jpeg"
-                    alt="Logo Rejofarm"
-                    className="h-7 w-auto rounded-md object-contain"
-                  />
-                </div>
-                <h1 className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent line-clamp-2 md:line-clamp-none max-w-[180px] sm:max-w-[320px] md:max-w-none leading-snug">
-                  Purwarupa Dashboard Rejofarm Integrated Farming
-                </h1>
+        <div className="mx-auto max-w-7xl px-3 pt-2 pb-0 sm:px-4 md:px-6">
+          {/* Top row: Logo + Title + Connection status */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-zinc-900/80 p-1 sm:p-1.5 rounded-lg border border-zinc-800/80 shadow-inner shrink-0">
+                <img
+                  src="/logo-ugm.png"
+                  alt="Logo UGM"
+                  className="h-6 sm:h-7 w-auto object-contain"
+                />
+                <div className="h-3 sm:h-4 w-px bg-zinc-800" />
+                <img
+                  src="/logo-rejofarm.jpeg"
+                  alt="Logo Rejofarm"
+                  className="h-6 sm:h-7 w-auto rounded-md object-contain"
+                />
               </div>
-
-              <nav className="flex gap-1">
-                <button
-                  onClick={() => setCurrentPage("dashboard")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${currentPage === "dashboard"
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
-                    }`}
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => setCurrentPage("devices")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${currentPage === "devices"
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
-                    }`}
-                >
-                  Perangkat
-                </button>
-              </nav>
+              <h1 className="text-[11px] sm:text-sm md:text-base font-bold bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent leading-tight truncate min-w-0">
+                <span className="sm:hidden">Dashboard Rejofarm</span>
+                <span className="hidden sm:inline">Purwarupa Dashboard Rejofarm Integrated Farming</span>
+              </h1>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <div className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all ${connectionStatus === "connected"
                 ? "bg-green-500/10 text-green-400"
                 : connectionStatus === "stale"
@@ -473,7 +456,7 @@ function DashboardContent() {
                       ? "bg-red-500"
                       : "bg-zinc-500 animate-pulse"
                   }`} />
-                <span className="hidden sm:inline">
+                <span className="text-[10px] sm:text-xs">
                   {connectionStatus === "connected" ? "Live" :
                     connectionStatus === "stale" ? "Stale" :
                       connectionStatus === "error" ? "Error" : "..."}
@@ -482,10 +465,32 @@ function DashboardContent() {
               <span className="hidden md:block text-xs text-zinc-500">{getLastUpdatedText()}</span>
             </div>
           </div>
+
+          {/* Bottom row: Nav tabs (always visible) */}
+          <nav className="flex items-center gap-1 mt-2 -mb-[1px]">
+            <button
+              onClick={() => setCurrentPage("dashboard")}
+              className={`rounded-t-md px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-all ${currentPage === "dashboard"
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30 border-b-transparent"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => setCurrentPage("devices")}
+              className={`rounded-t-md px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition-all ${currentPage === "devices"
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30 border-b-transparent"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                }`}
+            >
+              Perangkat
+            </button>
+          </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+      <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8">
         {currentPage === "devices" && (
           <DevicesPage
             sensorData={sensor}
@@ -509,8 +514,8 @@ function DashboardContent() {
             ) : (
               <div className="space-y-8">
                 <section>
-                  <h2 className="mb-6 text-2xl font-bold">Monitoring Sensor</h2>
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  <h2 className="mb-4 sm:mb-6 text-xl sm:text-2xl font-bold">Monitoring Sensor</h2>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
                     <StatCard
                       value={<AnimatedValue value={Number(sensor.temperature)} decimals={1} />}
                       unit="°C"
@@ -578,7 +583,7 @@ function DashboardContent() {
                         </div>
                       }
                     >
-                      <div className="h-[200px] w-full sm:h-[320px]">
+                      <div className="h-[180px] w-full sm:h-[320px]">
                         {lineData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={lineData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
@@ -689,7 +694,7 @@ function DashboardContent() {
       </main>
 
       <footer className="mt-12 border-t border-zinc-800/50 bg-zinc-950/50 py-8 md:mt-20">
-        <div className="mx-auto max-w-7xl px-4 md:px-6">
+        <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-zinc-500">© 2026 Purwarupa Dashboard Rejofarm Integrated Farming. All rights reserved.</p>
             <div className="flex gap-4 text-xs text-zinc-500">

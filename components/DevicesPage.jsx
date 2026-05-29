@@ -206,7 +206,7 @@ function DeviceCard({ name, description, icon, isOn, onToggle, stats }) {
     const colors = getColorScheme(name);
 
     return (
-        <div className={`device-card opacity-0 group relative overflow-hidden rounded-2xl border bg-gradient-to-br backdrop-blur-sm p-4 sm:p-6 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl active:scale-[0.98] ${colors.border} ${colors.shadow} ${colors.gradient}`}>
+        <div className={`device-card opacity-0 group relative overflow-hidden rounded-2xl border bg-gradient-to-br backdrop-blur-sm p-4 sm:p-6 transition-all duration-500 md:hover:-translate-y-2 hover:shadow-2xl active:scale-[0.98] ${colors.border} ${colors.shadow} ${colors.gradient}`}>
             {/* Animated overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 

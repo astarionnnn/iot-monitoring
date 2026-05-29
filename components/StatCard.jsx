@@ -34,16 +34,16 @@ export default function StatCard({ value, unit, label, icon, trend, color, gauge
     const colors = colorClasses[color] || colorClasses.blue;
 
     return (
-        <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-4 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 active:scale-[0.98] animate-on-load opacity-0 ${colors.gradient} ${colors.border} ${colors.shadow}`}>
+        <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3 sm:p-6 transition-all duration-300 hover:shadow-2xl md:hover:-translate-y-2 active:scale-[0.98] animate-on-load opacity-0 ${colors.gradient} ${colors.border} ${colors.shadow}`}>
             {/* Animated gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
             {/* Content */}
             <div className="relative flex items-start justify-between">
                 <div className="flex-1">
-                    <p className="text-sm font-medium text-zinc-400 transition-colors duration-300 group-hover:text-zinc-300">{label}</p>
+                    <p className="text-xs font-medium text-zinc-400 transition-colors duration-300 group-hover:text-zinc-300 sm:text-sm">{label}</p>
                     <div className="mt-2 flex items-baseline gap-1 transition-transform duration-300 group-hover:scale-105">
-                        <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{value}</h3>
+                        <h3 className="text-xl font-bold tracking-tight sm:text-3xl">{value}</h3>
                         {unit && <span className="text-xs font-medium text-zinc-500 sm:text-sm">{unit}</span>}
                     </div>
                     {trend && (
